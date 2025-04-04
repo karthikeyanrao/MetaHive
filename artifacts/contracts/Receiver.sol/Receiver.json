@@ -1,0 +1,51 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Receiver",
+  "sourceName": "contracts/Receiver.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ReceivedPayment",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b5060e18061001f6000396000f3fe608060405260043610601f5760003560e01c806312065fe014608c57605b565b36605b5760405134815233907f36fafa197834e3cf5a81c5718938b2aa7081dfd005bd22c3c995bb80edd1fe34906020015b60405180910390a2005b60405134815233907f36fafa197834e3cf5a81c5718938b2aa7081dfd005bd22c3c995bb80edd1fe34906020016051565b348015609757600080fd5b504760405190815260200160405180910390f3fea2646970667358221220ce1ed72f11f0ac4ec4d14d560eefd994543697c00352c1dddade456093bc57a364736f6c63430008140033",
+  "deployedBytecode": "0x608060405260043610601f5760003560e01c806312065fe014608c57605b565b36605b5760405134815233907f36fafa197834e3cf5a81c5718938b2aa7081dfd005bd22c3c995bb80edd1fe34906020015b60405180910390a2005b60405134815233907f36fafa197834e3cf5a81c5718938b2aa7081dfd005bd22c3c995bb80edd1fe34906020016051565b348015609757600080fd5b504760405190815260200160405180910390f3fea2646970667358221220ce1ed72f11f0ac4ec4d14d560eefd994543697c00352c1dddade456093bc57a364736f6c63430008140033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

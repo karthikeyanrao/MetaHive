@@ -1,0 +1,3 @@
+await network.provider.request({ method: "hardhat_reset", params: [] });
+await hre.network.provider.request({ method: "hardhat_reset", params: [] });
+await network.provider.send("hardhat_reset");

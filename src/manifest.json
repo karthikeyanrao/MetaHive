@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "MetaHive",
+    "version": "1.0",
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["contentScript.bundle.js"]
+      }
+    ],
+
+    "web_accessible_resources": [
+      {
+        "resources": ["contentScript.bundle.js"],       
+        "matches": ["<all_urls>"]
+      } 
+    ]
+  }
+  

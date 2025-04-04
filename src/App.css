@@ -1,0 +1,360 @@
+/* Reset and general styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  background: #13111C; /* Dark purple-tinted background */
+  color: #ffffff;
+}
+
+/* Navbar styles */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #1A1625; /* Changed back to dark theme */
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 2rem;
+  width: 100%;
+  height: 60px;
+  border-bottom: 1px solid rgba(82, 255, 168, 0.1);
+}
+
+.navbar-brand {
+  margin-left: 0;
+}
+
+.navbar-brand a {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #58dafa;
+  text-decoration: none;
+  padding-left: 0;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 2px 2px 4px rgba(82, 255, 168, 0.1);
+}
+
+.navbar-brand a:hover {
+  background: linear-gradient(45deg, #9D6EFF, #52FFA8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navbar-links {
+  margin-right: 2rem;
+}
+
+.navbar-links a {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+}
+
+.navbar-links a:hover {
+  background: #58dafa;
+  color: #13111C;
+}
+
+/* Hero section */
+.hero-section {
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 90vh;
+  padding: 0;
+}
+
+.hero-content {
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hero-section h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-image {
+  background: linear-gradient(135deg, rgba(82, 255, 168, 0.2), rgba(157, 110, 255, 0.2)),
+    url('https://example.com/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Property Grid */
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+  padding: 2rem 4rem;
+  margin-top: 2rem;
+}
+
+.property-card {
+  background: #1A1625;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(82, 255, 168, 0.1);
+}
+
+.property-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(82, 255, 168, 0.1);
+  border-color: rgba(82, 255, 168, 0.3);
+}
+
+.property-info {
+  padding: 2rem;
+}
+
+.property-info .price {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color:#58dafa;
+}
+
+/* Feature cards */
+.features-section {
+  padding: 4rem;
+  overflow-x: auto;
+  margin-top: 2rem;
+}
+
+.features-grid {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem;
+  min-width: max-content;
+}
+
+.feature-card {
+  background: #1A1625;
+  padding: 2rem;
+  border-radius: 20px;
+  min-width: 300px;
+  border: 1px solid rgba(82, 255, 168, 0.1);
+}
+
+.feature-card h3 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  letter-spacing: 1px;
+}
+
+/* Form elements */
+.form-group input,
+.form-group textarea,
+.filters input,
+.filters select {
+  background: #1A1625;
+  border: 2px solid rgba(82, 255, 168, 0.3);
+  color: white;
+  padding: 1rem;
+  border-radius: 12px;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.filters input:focus,
+.filters select:focus {
+  border-color: #58dafa;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(82, 255, 168, 0.1);
+}
+
+/* Buttons */
+.cta-button, .submit-button, .contact-button {
+  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.cta-button:hover, .submit-button:hover, .contact-button:hover {
+  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(82, 255, 168, 0.2);
+}
+
+.schedule-button {
+  background: #9D6EFF;
+  color: white;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.schedule-button:hover {
+  background: #8A5CF7;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(157, 110, 255, 0.2);
+}
+
+/* Property details page */
+.property-details {
+  margin-top: 60px;
+  padding: 4rem;
+  background: #1A1625;
+  border-radius: 20px;
+  border: 1px solid rgba(82, 255, 168, 0.1);
+}
+
+.property-details h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  letter-spacing: 1.5px;
+  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Filters section */
+.filters {
+  position: sticky;
+  top: 80px;
+  background: #1A1625;
+  margin: 2rem 4rem;
+  padding: 2rem;
+  border-radius: 20px;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid rgba(82, 255, 168, 0.1);
+}
+
+.filters label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Add property form */
+.add-property {
+  margin-top: 80px;
+  padding: 4rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.add-property h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  letter-spacing: 1.5px;
+  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Update scrollbar styles */
+
+/* Hide scrollbar by default */
+::-webkit-scrollbar {
+  width: 8px; /* Slightly thinner */
+  height: 8px;
+  background-color: transparent;
+}
+
+/* Show scrollbar only when scrolling */
+::-webkit-scrollbar-thumb {
+  background: rgba(82, 255, 168, 0.3); /* More transparent */
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+/* Hover effect on scrollbar */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(82, 255, 168, 0.5); /* More visible on hover */
+}
+
+/* Track style */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(82, 255, 168, 0.3) transparent;
+}
+
+/* Hide scrollbar when not scrolling */
+::-webkit-scrollbar-thumb:vertical {
+  min-height: 30px;
+}
+
+::-webkit-scrollbar-thumb:horizontal {
+  min-width: 30px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .navbar {
+    padding: 1rem 2rem;
+  }
+  
+  .properties-grid {
+    padding: 1rem;
+  }
+  
+  .filters {
+    flex-direction: column;
+    margin: 1rem;
+  }
+}
