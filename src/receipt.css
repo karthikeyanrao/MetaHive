@@ -1,0 +1,42 @@
+.receipt {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+}
+
+.receipt-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
+}
+
+.receipt-details {
+    margin-bottom: 20px;
+}
+
+.receipt-items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.receipt-items th,
+.receipt-items td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.receipt-footer {
+    border-top: 2px solid #000;
+    padding-top: 20px;
+}
+
+.thank-you {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
