@@ -7,6 +7,13 @@ import { ethers } from 'ethers';
 import './BuildingBadge.css';
 import { useAuth } from './context/AuthContext';
 
+// QR Code generation function
+const generateQRCode = (text) => {
+  const qrSize = 150; // Smaller size for better badge proportion
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(text)}`;
+  return qrUrl;
+};
+
 // Simplified ABI for basic NFT functionality
 const NFT_ABI = [
   {
@@ -57,14 +64,14 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
   const [showMintPopup, setShowMintPopup] = useState(false);
   const [mintFormData, setMintFormData] = useState({
     buildingName: '',
-    location: '',
-    imageUrl: ''
+    location: ''
   });
   const [propertyId, setPropertyId] = useState('');
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [createdAt, setCreatedAt] = useState(null);
   const [mintingContract, setMintingContract] = useState(null);
   const [badgeData, setBadgeData] = useState(null);
+  const [qrCodeLoading, setQrCodeLoading] = useState(false);
 
   const storage = getStorage();
 
@@ -116,12 +123,30 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
             const propertyDoc = querySnapshot.docs[0].data();
            if (propertyDoc.NftMinted === "Yes" && propertyDoc.nftData) {
               const nftData = propertyDoc.nftData;
+              
+              // Generate QR code if transaction hash exists but QR code is missing
+              let qrCodeUrl = nftData.qrCodeUrl;
+              if (nftData.transactionHash && nftData.transactionHash !== 'No Transaction Hash' && !qrCodeUrl) {
+                setQrCodeLoading(true);
+                qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${nftData.transactionHash}`);
+                
+                // Update Firestore with the generated QR code to persist it
+                try {
+                  await updateDoc(doc(db, 'properties', querySnapshot.docs[0].id), {
+                    'nftData.qrCodeUrl': qrCodeUrl
+                  });
+                  console.log('QR code saved to Firestore');
+                } catch (updateError) {
+                  console.error('Error updating QR code in Firestore:', updateError);
+                }
+              }
+              
               setBadgeData({
                 tokenId: nftData.tokenId || 'No Token ID',
                 mintedBy: nftData.mintedBy || 'No Minter Address',
                 mintedAt: nftData.mintedAt || null,
                 transactionHash: nftData.transactionHash || 'No Transaction Hash',
-                imageUrl: nftData.imageUrl || ''
+                qrCodeUrl: qrCodeUrl || ''
               });
             } else {
               console.log("NFT not minted or no NFT data available");
@@ -223,16 +248,17 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
         // Check network
         const network = await provider.getNetwork();
        
-
+        // Generate QR code for the transaction
+        const qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/`);
         
-        // Calculate 0.5 ETH in wei
-        const mintPrice = ethers.parseEther("0.00005");
-        
-        // Add a timeout for the transaction with 0.5 ETH value
+        // Mint without payment to reduce gas fees
         const mintPromise = contract.safeMint(
             userAddress, 
-            mintFormData.imageUrl, 
-            { value: mintPrice } // Include 0.5 ETH payment
+            qrCodeUrl, // Use QR code URL instead of image URL
+            { 
+              gasLimit: 200000, // Set gas limit to reduce fees
+              gasPrice: ethers.parseUnits("20", "gwei") // Lower gas price
+            }
         );
         
         // Set a 2-minute timeout
@@ -244,11 +270,14 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
 
         const receipt = await tx.wait(); // Wait for confirmation
         
+        // Generate final QR code with transaction hash
+        const finalQrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${tx.hash}`);
+        
         // Save badge data to Firestore
         const badgeData = {
             buildingName: propertyTitle,
             location: propertyDetails?.location,
-            imageUrl: mintFormData.imageUrl,
+            qrCodeUrl: finalQrCodeUrl,
             mintedBy: userAddress,
             mintedAt: new Date(),
             transactionHash: tx.hash
@@ -265,7 +294,7 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
             if (!querySnapshot.empty) {
                 const propertyDoc = querySnapshot.docs[0];
                 const nftData = {
-                    imageUrl: mintFormData.imageUrl,
+                    qrCodeUrl: finalQrCodeUrl,
                     transactionHash: tx.hash,
                     mintedBy: userAddress,
                     mintedAt: new Date(),
@@ -329,8 +358,24 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
           <h3>Property NFT Badge</h3>
           <div className="badge-content">
             <div className="badge-image">
-              {badgeData?.imageUrl && (
-                <img src={badgeData.imageUrl} alt="NFT" className="nft-image" />
+              {(badgeData?.qrCodeUrl || badgeData?.transactionHash) && (
+                <div className="qr-code-container">
+                  {qrCodeLoading ? (
+                    <div className="qr-loading">
+                      <i className="fas fa-spinner fa-spin"></i>
+                      <span>Generating QR Code...</span>
+                    </div>
+                  ) : (
+                    <img 
+                      src={badgeData.qrCodeUrl || generateQRCode(`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`)} 
+                      alt="Transaction QR Code" 
+                      className="qr-code-image"
+                      onLoad={() => setQrCodeLoading(false)}
+                      onError={() => setQrCodeLoading(false)}
+                                   />
+                  )}
+                 
+                </div>
               )}
             </div>
             <div className="badge-details">
@@ -357,7 +402,7 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
                 <p>
                   <strong>Transaction:</strong> 
                   <a 
-                    href={`https://etherscan.io/tx/${badgeData.transactionHash}`} 
+                    href={`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
@@ -396,16 +441,11 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="imageUrl">Image URL (optional):</label>
-                    <input
-                      type="url"
-                      id="imageUrl"
-                      name="imageUrl"
-                      value={mintFormData.imageUrl}
-                      onChange={handleInputChange}
-                      placeholder="Enter image URL"
-                    />
-                    <small className="form-help">Store all the Property Details in GDRIVE</small>
+                    <div className="qr-info">
+                      <i className="fas fa-qrcode"></i>
+                      <span>QR Code will be automatically generated for transaction verification</span>
+                    </div>
+                    <small className="form-help">The QR code will link directly to your transaction on Sepolia Etherscan</small>
                   </div>
 
                   <div className="form-buttons">

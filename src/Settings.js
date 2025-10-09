@@ -222,12 +222,7 @@ function Settings() {
 
         {/* Profile Header */}
         <div className="profile-header">
-          <div className="profile-avatar">
-            <img 
-              src={userData?.avatar || currentUser?.photoURL || '/user.png'} 
-              alt="Profile" 
-            />
-          </div>
+         
           <div className="profile-info">
             <h1>{userData?.name || currentUser?.displayName || 'User'}</h1>
             <p className="user-role">{userRole || 'User'}</p>
