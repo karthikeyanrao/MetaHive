@@ -5,19 +5,18 @@ import { db } from './context/firebase';
 import { collection, addDoc, getDoc, doc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import { v4 as uuidv4 } from 'uuid'; // Import uuid for generating unique IDs
-
+import { v4 as uuidv4 } from 'uuid';
 
 function AddProperty() {
   const navigate = useNavigate();
-  
-  const { user, currentUser } = useAuth(); // Get user details from the useAuth hook
+  const { user, currentUser } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     price: '',
-    location: '',
+    streetNumber: '',
+    completeAddress: '',
     bedrooms: '',
     bathrooms: '',
     area: '',
@@ -41,15 +40,13 @@ function AddProperty() {
     const fetchUserName = async () => {
       if (user && user.email) {
         try {
-          const userDoc = await getDoc(doc(db, 'Users', user.email)); // Fetch user data from Users collection
+          const userDoc = await getDoc(doc(db, 'Users', user.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setFormData((prevData) => ({
+            setFormData(prevData => ({
               ...prevData,
-              name: userData.name || '' // Set the name from the user document
+              name: userData.name || ''
             }));
-          } else {
-            console.error('User not found in Users collection');
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -57,111 +54,20 @@ function AddProperty() {
       }
     };
 
-    fetchUserName(); // Call the function to fetch user name
-  }, [user, db]);
-
-  useEffect(() => {
-    if (currentUser) {
-          // Also fetch and log the complete user data from Firestore
-      const fetchUserData = async () => {
-        try {
-          const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
-          if (userDoc.exists()) {
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      };
-      
-      fetchUserData();
-    }
-  }, [currentUser]);
-
-  const handleFileChange = (event) => {
-    const files = Array.from(event.target.files);
-    const fileReaders = files.map(file => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          // Create an image element to draw the image
-          const img = new Image();
-          img.src = reader.result;
-          img.onload = () => {
-            // Create a canvas to resize the image
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const MAX_WIDTH = 800; // Set max width
-            const scaleSize = MAX_WIDTH / img.width;
-            canvas.width = MAX_WIDTH;
-            canvas.height = img.height * scaleSize;
-
-            // Draw the image on the canvas
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // Compress to JPEG with 70% quality
-
-            // Store compressed image in local storage
-            localStorage.setItem(`${uniqueId}_${file.name}`, compressedDataUrl);
-            resolve();
-          };
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(fileReaders).then(() => {
-      setSelectedFiles(files);
-    });
-  };
-
-  const handleUpload = async () => {
-    // Generate a unique ID for the building
-    const uniqueId = uuidv4();
-
-    // Validate required fields before proceeding
-    if (!formData.title || !formData.price || !formData.location) {
-      alert("Please fill in all required fields");
-      return;
-    }
-
-    if (selectedFiles.length > 0) {
-      try {
-        // Store images in local storage with the unique ID as the key
-        selectedFiles.forEach(file => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            localStorage.setItem(`${uniqueId}_${file.name}`, reader.result);
-          };
-          reader.readAsDataURL(file);
-        });
-      } catch (error) {
-        console.error("Error handling files:", error);
-        alert("Error handling files: " + error.message);
-        return; // Return early if there's an error with files
-      }
-    }
-    
-    // Scroll to the top of the page
-    window.scrollTo(0, 0);
-    
-    try {
-      // Call handleSubmit with the unique ID
-      await handleSubmit(uniqueId);
-    } catch (error) {
-      alert("Error submitting form: " + error.message);
-    }
-  };
+    fetchUserName();
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
+    setFormData(prevData => ({
+      ...prevData,
       [name]: value
     }));
   };
 
-  const handleAmenityChange = (event) => {
-    const { name, checked } = event.target;
-    setFormData((prevData) => ({
+  const handleAmenityChange = (e) => {
+    const { name, checked } = e.target;
+    setFormData(prevData => ({
       ...prevData,
       amenities: {
         ...prevData.amenities,
@@ -170,110 +76,156 @@ function AddProperty() {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+  };
+
+  const handleUpload = async () => {
+    const uniqueId = uuidv4();
+
+    if (!formData.title || !formData.price || !formData.streetNumber || !formData.completeAddress) {
+      alert("Please fill in all required fields (Title, Price, Street Number, and Complete Address)");
+      return;
+    }
+
+    if (selectedFiles.length > 0) {
+      try {
+        selectedFiles.forEach(file => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            localStorage.setItem(`propertyImage_${uniqueId}_${file.name}`, reader.result);
+          };
+          reader.readAsDataURL(file);
+        });
+      } catch (error) {
+        console.error('Error storing images:', error);
+      }
+    }
+
+    handleSubmit(uniqueId);
+  };
+
   const handleSubmit = async (uniqueId) => {
     setIsLoading(true);
 
     try {
-       // 🔹 Fetch latitude and longitude using OpenStreetMap API
-       const locationQuery = encodeURIComponent(formData.location);
-       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1`);
-       const data = await response.json();
+      // Enhanced geocoding for global locations
+      const locationQuery = encodeURIComponent(formData.completeAddress);
+      
+      // Use multiple geocoding strategies for better global coverage
+      const geocodingPromises = [
+        // Primary: OpenStreetMap Nominatim (global coverage)
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&addressdetails=1&extratags=1&namedetails=1&countrycodes=&accept-language=en`),
+        
+        // Fallback: Try with different parameters for better international results
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&addressdetails=1&extratags=1&namedetails=1&countrycodes=&accept-language=en&dedupe=0`)
+      ];
+      
+      let data = [];
+      let response;
+      
+      // Try primary geocoding first
+      try {
+        response = await geocodingPromises[0];
+        data = await response.json();
+      } catch (error) {
+        console.log('Primary geocoding failed, trying fallback...');
+        response = await geocodingPromises[1];
+        data = await response.json();
+      }
    
-       if (data.length === 0) {
-         alert("Location not found. Please enter a valid address.");
-         setIsLoading(false);
-         return;
-       }
+      if (data.length === 0) {
+        alert("Location not found. Please verify the address details. Make sure to include country name for international addresses.");
+        setIsLoading(false);
+        return;
+      }
    
-       // Define lat & lng before using them
-       const lat = parseFloat(data[0].lat);
-       const lng = parseFloat(data[0].lon);
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      const displayName = data[0].display_name;
+      const country = data[0].address?.country || 'Unknown';
+      const countryCode = data[0].address?.country_code || 'XX';
    
-   
-       // 🔹 Fetch user data using currentUser.uid
-       const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
-       if (userDoc.exists()) {
-         const userData = userDoc.data();
+      const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
          
-         // 🔹 Prepare property data with lat/lng and unique ID
-         const propertyData = {
-           id: uniqueId, // Store the unique ID
-           title: formData.title,
-           price: Number(formData.price),
-           location: formData.location,
-           bedrooms: Number(formData.bedrooms),
-           bathrooms: Number(formData.bathrooms),
-           area: Number(formData.area),
-           description: formData.description,
-           NftMinted: formData.NftMinted,
-           lat: lat, // ✅ Ensure lat is defined
-           lng: lng, // ✅ Ensure lng is defined
-           createdAt: new Date().toISOString(),
-           builderId: currentUser.uid,
-           builderName: userData.name,
-           builderEmail: currentUser.email,
-           isSold: "New",
-           rawMaterials: formData.rawMaterials,
-           buildingDescription: formData.buildingDescription,
-           details: formData.details,
-           furnishedStatus: formData.furnishedStatus,
-           amenities: formData.amenities
-         };
+        const propertyData = {
+          id: uniqueId,
+          title: formData.title,
+          price: Number(formData.price),
+          streetNumber: formData.streetNumber,
+          location: formData.completeAddress,
+          bedrooms: Number(formData.bedrooms),
+          bathrooms: Number(formData.bathrooms),
+          area: Number(formData.area),
+          description: formData.description,
+          NftMinted: formData.NftMinted,
+          lat: lat,
+          lng: lng,
+          displayName: displayName,
+          country: country,
+          countryCode: countryCode,
+          createdAt: new Date().toISOString(),
+          builderId: currentUser.uid,
+          builderName: userData.name,
+          builderEmail: currentUser.email,
+          isSold: "New",
+          rawMaterials: formData.rawMaterials,
+          buildingDescription: formData.buildingDescription,
+          details: formData.details,
+          furnishedStatus: formData.furnishedStatus,
+          amenities: formData.amenities
+        };
          
-         
-         // Add to Firestore
-         const docRef = await addDoc(collection(db, 'properties'), propertyData);
-         
-         // Store the unique ID in local storage
-         localStorage.setItem('propertyId', uniqueId);
-         
-         alert('Property listed successfully! Redirecting to properties page...');
-         
-         // Clear form
-         setFormData({
-           title: '',
-           price: '',
-           location: '',
-           bedrooms: '',
-           bathrooms: '',
-           area: '',
-           description: '',
-           NftMinted: 'No',
-           name: '',
-           rawMaterials: '',
-           buildingDescription: '',
-           details: '',
-           furnishedStatus: 'Non-Furnished',
-           amenities: {
-             carParking: false,
-             swimmingPool: false,
-             security: false,
-             cctv: false,
-           }
-         });
-         setSelectedFiles([]);
-         
-         // Redirect to properties page
-         setTimeout(() => {
-           navigate('/properties');
-         }, 500);
-       }
+        await addDoc(collection(db, 'properties'), propertyData);
+        localStorage.setItem('propertyId', uniqueId);
+        
+        alert('Property listed successfully! Redirecting to properties page...');
+        
+        setFormData({
+          title: '',
+          price: '',
+          streetNumber: '',
+          completeAddress: '',
+          bedrooms: '',
+          bathrooms: '',
+          area: '',
+          description: '',
+          NftMinted: 'No',
+          name: '',
+          rawMaterials: '',
+          buildingDescription: '',
+          details: '',
+          furnishedStatus: 'Non-Furnished',
+          amenities: {
+            carParking: false,
+            swimmingPool: false,
+            security: false,
+            cctv: false,
+          }
+        });
+        setSelectedFiles([]);
+        
+        setTimeout(() => {
+          navigate('/properties');
+        }, 2000);
+      }
     } catch (error) {
-      console.error('Error details:', error);
-      alert('Error adding property: ' + error.message);
+      console.error('Error adding property:', error);
+      alert('Failed to add property. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
     <>
       <ThreeBackground />
       <div className="add-property">
-        {/* Back Button */}
         <button className="back-button" onClick={() => window.history.back()}>
-           Back
+          Back
         </button>
         <h2>List Your Property</h2>
         <form 
@@ -311,30 +263,52 @@ function AddProperty() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="location">Location</label>
+              <label htmlFor="streetNumber">Street Number *</label>
               <input
                 type="text"
-                id="location"
-                name="location"
-                value={formData.location}
+                id="streetNumber"
+                name="streetNumber"
+                value={formData.streetNumber}
                 onChange={handleChange}
-                placeholder="Enter location"
+                placeholder="e.g., 123, 45A, Block B"
                 required
               />
             </div>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="area">Area (sq ft)</label>
-              <input
-                type="number"
-                id="area"
-                name="area"
-                value={formData.area}
-                onChange={handleChange}
-                placeholder="Enter area"
-                required
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="completeAddress">Complete Property Address *</label>
+            <textarea
+              id="completeAddress"
+              name="completeAddress"
+              value={formData.completeAddress}
+              onChange={handleChange}
+              placeholder="Enter the complete address of the property (anywhere in the world)"
+              rows="3"
+              required
+            />
+            <small style={{ color: '#888', fontSize: '12px' }}>
+              <strong>Examples:</strong><br/>
+              🇺🇸 123 Main Street, New York, NY 10001, United States<br/>
+              🇬🇧 10 Downing Street, Westminster, London SW1A 2AA, United Kingdom<br/>
+              🇫🇷 1 Avenue des Champs-Élysées, 75008 Paris, France<br/>
+              🇯🇵 1-1-1 Shibuya, Shibuya City, Tokyo 150-0002, Japan<br/>
+              🇦🇺 1 Collins Street, Melbourne VIC 3000, Australia<br/>
+              <em>Include country name for best results!</em>
+            </small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="area">Area (sq ft)</label>
+            <input
+              type="number"
+              id="area"
+              name="area"
+              value={formData.area}
+              onChange={handleChange}
+              placeholder="Enter area in square feet"
+              required
+            />
           </div>
 
           <div className="form-row">
@@ -346,7 +320,7 @@ function AddProperty() {
                 name="bedrooms"
                 value={formData.bedrooms}
                 onChange={handleChange}
-                placeholder="No. of bedrooms"
+                placeholder="Number of bedrooms"
                 required
               />
             </div>
@@ -359,131 +333,140 @@ function AddProperty() {
                 name="bathrooms"
                 value={formData.bathrooms}
                 onChange={handleChange}
-                placeholder="No. of bathrooms"
+                placeholder="Number of bathrooms"
                 required
               />
             </div>
           </div>
-          <div className="form-row">
-  <div className="form-group">
-    <label htmlFor="rawMaterials">Raw Materials Used</label>
-    <textarea
-      id="rawMaterials"
-      name="rawMaterials"
-      value={formData.rawMaterials}
-      onChange={handleChange}
-      placeholder="Enter raw materials used"
-      required
-    />
-  </div>
 
-  <div className="form-group">
-    <label htmlFor="buildingDescription">Building Description</label>
-    <textarea
-      id="buildingDescription"
-      name="buildingDescription"
-      value={formData.buildingDescription}
-      onChange={handleChange}
-      placeholder="Enter building description"
-      required
-    />
-  </div>
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Describe your property"
+              required
+            />
+          </div>
 
-  <div className="form-group">
-    <label htmlFor="details">Details (e.g., number of fans, lights)</label>
-    <textarea
-      id="details"
-      name="details"
-      value={formData.details}
-      onChange={handleChange}
-      placeholder="Enter details about fans, lights, etc."
-      required
-    />
-  </div>
-</div>
+          <div className="form-group">
+            <label htmlFor="rawMaterials">Raw Materials Used</label>
+            <textarea
+              id="rawMaterials"
+              name="rawMaterials"
+              value={formData.rawMaterials}
+              onChange={handleChange}
+              placeholder="List the raw materials used in construction"
+              required
+            />
+          </div>
 
-<div className="form-group">
-  <label>Furnished Status</label>
-  <div style={{ display: 'flex', gap: '20px' }}>
-    <label>
-      <input
-        type="radio"
-        name="furnishedStatus"
-        value="Furnished"
-        checked={formData.furnishedStatus === 'Furnished'}
-        onChange={handleChange}
-        required
-      />
-      Furnished
-    </label>
-    <label>
-      <input
-        type="radio"
-        name="furnishedStatus"
-        value="Semi-Furnished"
-        checked={formData.furnishedStatus === 'Semi-Furnished'}
-        onChange={handleChange}
-        required
-      />
-      Semi-Furnished
-    </label>
-    <label>
-      <input
-        type="radio"
-        name="furnishedStatus"
-        value="Non-Furnished"
-        checked={formData.furnishedStatus === 'Non-Furnished'}
-        onChange={handleChange}
-        required
-      />
-      Non-Furnished
-    </label>
-  </div>
-</div>
+          <div className="form-group">
+            <label htmlFor="buildingDescription">Building Description</label>
+            <textarea
+              id="buildingDescription"
+              name="buildingDescription"
+              value={formData.buildingDescription}
+              onChange={handleChange}
+              placeholder="Describe the building structure and features"
+              required
+            />
+          </div>
 
-<div className="form-group">
-  <label>Amenities</label>
-  <div style={{ display: 'flex', gap: '20px' }}>
-    <label>
-      <input
-        type="checkbox"
-        name="carParking"
-        checked={formData.amenities.carParking}
-        onChange={handleAmenityChange}
-      />
-      Car Parking
-    </label>
-    <label>
-      <input
-        type="checkbox"
-        name="swimmingPool"
-        checked={formData.amenities.swimmingPool}
-        onChange={handleAmenityChange}
-      />
-      Swimming Pool
-    </label>
-    <label>
-      <input
-        type="checkbox"
-        name="security"
-        checked={formData.amenities.security}
-        onChange={handleAmenityChange}
-      />
-      Security
-    </label>
-    <label>
-      <input
-        type="checkbox"
-        name="cctv"
-        checked={formData.amenities.cctv}
-        onChange={handleAmenityChange}
-      />
-      CCTV
-    </label>
-  </div>
-</div>
+          <div className="form-group">
+            <label htmlFor="details">Details (e.g., number of fans, lights)</label>
+            <textarea
+              id="details"
+              name="details"
+              value={formData.details}
+              onChange={handleChange}
+              placeholder="Enter details about fans, lights, etc."
+              required
+            />
+          </div>
 
-          
+          <div className="form-group">
+            <label>Furnished Status</label>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              <label>
+                <input
+                  type="radio"
+                  name="furnishedStatus"
+                  value="Furnished"
+                  checked={formData.furnishedStatus === 'Furnished'}
+                  onChange={handleChange}
+                />
+                Furnished
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="furnishedStatus"
+                  value="Non-Furnished"
+                  checked={formData.furnishedStatus === 'Non-Furnished'}
+                  onChange={handleChange}
+                />
+                Non-Furnished
+              </label>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Amenities</label>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              <label>
+                <input
+                  type="checkbox"
+                  name="carParking"
+                  checked={formData.amenities.carParking}
+                  onChange={handleAmenityChange}
+                />
+                Car Parking
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="swimmingPool"
+                  checked={formData.amenities.swimmingPool}
+                  onChange={handleAmenityChange}
+                />
+                Swimming Pool
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="security"
+                  checked={formData.amenities.security}
+                  onChange={handleAmenityChange}
+                />
+                Security
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="cctv"
+                  checked={formData.amenities.cctv}
+                  onChange={handleAmenityChange}
+                />
+                CCTV
+              </label>
+            </div>
+          </div>
+
+         
+          <div className="form-group">
+            <label htmlFor="images">Property Images</label>
+            <input
+              type="file"
+              id="images"
+              name="images"
+              multiple
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </div>
 
           <button 
             type="submit" 
@@ -499,4 +482,4 @@ function AddProperty() {
   );
 }
 
-export default AddProperty; 
+export default AddProperty;

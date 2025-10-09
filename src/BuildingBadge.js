@@ -226,7 +226,7 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
 
         
         // Calculate 0.5 ETH in wei
-        const mintPrice = ethers.parseEther("0.5");
+        const mintPrice = ethers.parseEther("0.00005");
         
         // Add a timeout for the transaction with 0.5 ETH value
         const mintPromise = contract.safeMint(

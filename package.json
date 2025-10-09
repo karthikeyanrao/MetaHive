@@ -8,13 +8,20 @@
     "build": "webpack --mode production",
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "deploy:local": "hardhat run scripts/deploy.js --network localhost"
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "deploy:holesky": "hardhat run scripts/deploy.js --network holesky",
+    "verify:sepolia": "hardhat verify --network sepolia",
+    "verify:holesky": "hardhat verify --network holesky"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.1",
+    "dotenv": "^17.2.3",
     "firebase": "^11.3.0",
+    "firebase-admin": "^13.5.0",
     "html2pdf.js": "^0.10.3",
     "leaflet": "^1.9.4",
+    "openai": "^6.2.0",
     "react-icons": "^5.4.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.1.5",

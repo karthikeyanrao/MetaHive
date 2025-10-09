@@ -21,8 +21,8 @@ async function main() {
   );
   console.log("Test badge issued:", await testBadge.wait());
 
-  // Use the existing receiver address 
-  const RECEIVER_ADDRESS = "0xA17c98A79470a8A5eF9C46c04104fb75D456b98c";
+  // Use receiver address from env or fallback (env strongly recommended on public networks)
+  const RECEIVER_ADDRESS = process.env.RECEIVER_ADDRESS || "0x3F05ee1F593293d16328c9d0C6E75ef617920968";
   console.log("Using receiver address:", RECEIVER_ADDRESS);
 
   // Deploy new Sender contract

@@ -4,6 +4,7 @@ import home from "./home.png";
 import ThreeBackground from './ThreeBackground';
 import { ethers } from 'ethers';
 import { useWeb3 } from './context/Web3Context';
+import { useAuth } from './context/AuthContext';
 import { SENDER_ADDRESS, SENDER_ABI } from './contracts/SenderContract';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from "./context/firebase"; // Ensure db is properly exported
@@ -22,7 +23,8 @@ function PropertyDetails() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(null);
-  const { isConnected, account, currentUser } = useWeb3();
+  const { isConnected, account } = useWeb3();
+  const { currentUser } = useAuth();
   const [paymentStatus, setPaymentStatus] = useState('');
   const [isSold, setIsSold] = useState(() => {
     return localStorage.getItem(`property_${id}_sold`) === 'true'
@@ -115,6 +117,12 @@ function PropertyDetails() {
         return;
       }
 
+      if (!currentUser) {
+        alert('Please login to make a purchase');
+        setPaymentStatus('');
+        return;
+      }
+
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const senderContract = new ethers.Contract(
@@ -123,7 +131,7 @@ function PropertyDetails() {
         signer
       );
 
-      const amountToSend = ethers.parseEther("2.0");
+      const amountToSend = ethers.parseEther("0.00005");
       setPaymentStatus('Processing payment...');
 
       const tx = await senderContract.sendEther({ value: amountToSend });
@@ -136,7 +144,13 @@ function PropertyDetails() {
 
       if (!querySnapshot.empty) {
         const propertyDoc = querySnapshot.docs[0].ref;
-        await updateDoc(propertyDoc, { isSold: 'Sold' });
+        await updateDoc(propertyDoc, { 
+          isSold: 'Sold',
+          buyerId: currentUser.uid,
+          buyerName: currentUser?.displayName || 'Anonymous',
+          buyerAddress: account,
+          soldAt: new Date().toISOString()
+        });
         setIsSold(true);
 
         // Generate receipt data after successful payment
@@ -408,7 +422,7 @@ function PropertyDetails() {
 
       <button 
         className="schedule-button" 
-        onClick={() => window.open("https://cal.com/subhashini-s-m-kecyon", "_blank")}
+        onClick={() => window.open("000", "_blank")}
       >
         <i className="fas fa-calendar-alt"></i> Schedule Viewing
       </button>

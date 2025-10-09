@@ -29,9 +29,22 @@ function PropertyList() {
   const [priceRange, setPriceRange] = useState('all');
   const [sortOrder, setSortOrder] = useState('none');
   const [visibleMap, setVisibleMap] = useState(null);
+  const [showSoldProperties, setShowSoldProperties] = useState(false);
+  const [isFiltersVisible, setIsFiltersVisible] = useState(true);
 
   useEffect(() => {
     fetchProperties();
+  }, []);
+
+  // Handle scroll to show/hide filters
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setIsFiltersVisible(scrollTop < 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const fetchProperties = async () => {
@@ -60,6 +73,9 @@ function PropertyList() {
 
   const filteredProperties = properties
     .filter((property) => {
+      // Show available properties or sold properties based on toggle
+      const isAvailable = showSoldProperties ? true : property.isSold !== 'Sold';
+      
       const matchesSearch =
         property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.location.toLowerCase().includes(searchTerm.toLowerCase());
@@ -72,7 +88,7 @@ function PropertyList() {
       } else if (priceRange === 'high') {
         matchesPrice = property.price > 500000;
       }
-      return matchesSearch && matchesPrice;
+      return isAvailable && matchesSearch && matchesPrice;
     })
     .sort((a, b) => {
       if (sortOrder === 'Low') {
@@ -95,62 +111,114 @@ function PropertyList() {
           Back
         </button>
 
-        <div className="filters" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input
-            type="text"
-            placeholder="Search by title or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <select onChange={(e) => setPriceRange(e.target.value)}>
-            <option value="all">Filter by Price</option>
-            <option value="low">$0 - $200,000</option>
-            <option value="mid">$200,000 - $500,000</option>
-            <option value="high">$500,000+</option>
-          </select>
-          <select onChange={(e) => setSortOrder(e.target.value)}>
-            <option value="none">Sort by Price</option>
-            <option value="Low">Low to High</option>
-            <option value="High">High to Low</option>
-          </select>
+        <div className={`filters ${isFiltersVisible ? 'filters-visible' : 'filters-hidden'}`}>
+          <div className="filters-content">
+            <input
+              type="text"
+              placeholder="Search by title or location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <select onChange={(e) => setPriceRange(e.target.value)}>
+              <option value="all">Filter by Price</option>
+              <option value="low">$0 - $200,000</option>
+              <option value="mid">$200,000 - $500,000</option>
+              <option value="high">$500,000+</option>
+            </select>
+            <select onChange={(e) => setSortOrder(e.target.value)}>
+              <option value="none">Sort by Price</option>
+              <option value="Low">Low to High</option>
+              <option value="High">High to Low</option>
+            </select>
+            <button 
+              className={`toggle-sold-btn ${showSoldProperties ? 'active' : ''}`}
+              onClick={() => setShowSoldProperties(!showSoldProperties)}
+            >
+              {showSoldProperties ? 'Hide Sold' : 'Show Sold'}
+            </button>
+          </div>
+        </div>
+
+        <div className="properties-info">
+          <p>
+            {showSoldProperties ? (
+              <>
+                🏠 Showing {filteredProperties.length} properties (including sold)
+                {properties.length !== filteredProperties.length && (
+                  <span style={{ color: '#ff6b6b', marginLeft: '10px' }}>
+                    ({properties.length - filteredProperties.length} properties filtered out)
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                Showing {filteredProperties.length} available properties
+                {properties.length > filteredProperties.length && (
+                  <span style={{ color: '#ff6b6b', marginLeft: '10px' }}>
+                    ({properties.length - filteredProperties.length} sold properties hidden)
+                  </span>
+                )}
+              </>
+            )}
+          </p>
         </div>
 
         <div className="properties-grid">
-          {filteredProperties.map((property) => (
-            <div key={property.id} className="property-card">
-              <Link to={`/property/${property.id}`} className="property-link">
-                <div className="property-image-container">
-                  <img src={property.randomImage} alt={property.title} />
-                </div>
-                <div className="property-info">
-                  <h3>{property.title}</h3>
-                  <p className="price">${property.price.toLocaleString()}</p>
-                  <p className="details">{property.bedrooms} beds • {property.bathrooms} baths • {property.area} sqft</p>
-                </div>
-              </Link>
-              <p className="location">
-                <span
-                  className="location-marker"
-                  onClick={() => toggleMap(property.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {property.location}
-                </span>
+          {filteredProperties.length === 0 ? (
+            <div className="no-properties" style={{ 
+              textAlign: 'center', 
+              padding: '40px', 
+              color: '#666',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '10px',
+              margin: '20px 0'
+            }}>
+              <h3 style={{ color: '#00d4ff', marginBottom: '10px' }}>No Available Properties Found</h3>
+              <p>All properties are currently sold or no properties match your search criteria.</p>
+              <p style={{ fontSize: '0.9rem', marginTop: '10px', opacity: '0.8' }}>
+                Try adjusting your search terms or price range.
               </p>
-              {visibleMap === property.id && (
-                <div className="mini-map">
-                  <MapContainer center={[property.lat, property.lng]} zoom={15} style={{ height: '200px', width: '100%' }}>
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <Marker position={[property.lat, property.lng]} icon={redMarker}>
-                      <Popup>
-                        {property.title} - {property.location}
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
-                </div>
-              )}
             </div>
-          ))}
+          ) : (
+            filteredProperties.map((property) => (
+              <div key={property.id} className="property-card">
+                <div className={`property-status-badge ${property.isSold === 'Sold' ? 'sold' : 'available'}`}>
+                  {property.isSold === 'Sold' ? 'Sold' : 'Available'}
+                </div>
+                <Link to={`/property/${property.id}`} className="property-link">
+                  <div className="property-image-container">
+                    <img src={property.randomImage} alt={property.title} />
+                  </div>
+                  <div className="property-info">
+                    <h3>{property.title}</h3>
+                    <p className="price">${property.price.toLocaleString()}</p>
+                    <p className="details">{property.bedrooms} beds • {property.bathrooms} baths • {property.area} sqft</p>
+                  </div>
+                </Link>
+                <p className="location">
+                  <span
+                    className="location-marker"
+                    onClick={() => toggleMap(property.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {property.location}
+                  </span>
+                </p>
+                {visibleMap === property.id && (
+                  <div className="mini-map">
+                    <MapContainer center={[property.lat, property.lng]} zoom={15} style={{ height: '200px', width: '100%' }}>
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <Marker position={[property.lat, property.lng]} icon={redMarker}>
+                        <Popup>
+                          {property.title} - {property.location}
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </>

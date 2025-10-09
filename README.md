@@ -1,3 +1,27 @@
+# MetaHive – Deployment to Public Testnets
+
+## Environment Variables
+
+Create a `.env` file in the project root with:
+
+```
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
+HOLESKY_RPC_URL=https://ethereum-holesky.publicnode.com
+ETHERSCAN_API_KEY=YOUR_ETHERSCAN_OR_BLOCKSCOUT_KEY
+RECEIVER_ADDRESS=0xReceiverAddress
+```
+
+Use a fresh wallet with no real funds. Add test ETH via a faucet.
+
+## Deploy
+
+- Local: `npm run deploy:local`
+- Sepolia: `npm run deploy:sepolia`
+- Holesky: `npm run deploy:holesky`
+
+The script prints deployed addresses you can share in hackathon submissions.
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

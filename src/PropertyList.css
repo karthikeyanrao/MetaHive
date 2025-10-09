@@ -6,14 +6,34 @@
 }
 
 .filters {
-  display: flex;
-  gap: 1rem;
+  position: sticky;
+  top: 70px;
+  z-index: 100;
   margin-bottom: 2rem;
-  flex-wrap: wrap;
   background: #1A1625;
   padding: 1.5rem;
   border-radius: 12px;
   border: 1px solid rgba(82, 255, 168, 0.1);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.filters.filters-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.filters.filters-hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
+.filters-content {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .filters input,
@@ -35,6 +55,33 @@
   box-shadow: 0 0 0 2px rgba(82, 255, 168, 0.1);
 }
 
+.toggle-sold-btn {
+  padding: 0.8rem 1.5rem;
+  border: 2px solid rgba(0, 212, 255, 0.3);
+  border-radius: 8px;
+  background: #13111C;
+  color: #00d4ff;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+  white-space: nowrap;
+}
+
+.toggle-sold-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: #00d4ff;
+  transform: translateY(-2px);
+}
+
+.toggle-sold-btn.active {
+  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  color: white;
+  border-color: #00d4ff;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
 .properties-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -48,14 +95,80 @@
   text-decoration: none;
   color: #ffffff;
   border: 1px solid rgba(82, 255, 168, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .property-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 24px rgba(82, 255, 168, 0.1);
   border-color: rgba(82, 255, 168, 0.3);
+}
+
+.property-status-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.property-status-badge.available {
+  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  animation: pulse 2s infinite;
+}
+
+.property-status-badge.sold {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+  animation: none;
+}
+
+.properties-info {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(0, 212, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.properties-info p {
+  margin: 0;
+  color: #00d4ff;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.no-properties {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin: 20px 0;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-properties h3 {
+  color: #00d4ff;
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.no-properties p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.no-properties p:last-child {
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 .property-card img {
@@ -246,6 +359,7 @@
 
 .price {
   background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: bold;
@@ -407,4 +521,42 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 1.2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .property-list {
+    padding: 1rem;
+  }
+  
+  .filters {
+    position: sticky;
+    top: 60px;
+    padding: 1rem;
+  }
+  
+  .filters-content {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .filters input,
+  .filters select,
+  .toggle-sold-btn {
+    min-width: 100%;
+    width: 100%;
+  }
+  
+  .properties-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .properties-info {
+    margin: 15px 0;
+    padding: 10px;
+  }
+  
+  .properties-info p {
+    font-size: 0.9rem;
+  }
 }

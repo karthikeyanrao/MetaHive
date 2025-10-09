@@ -31,9 +31,9 @@ function Footer() {
         <div className="footer-section">
           <h4>Contact Info</h4>
           <ul className="contact-info">
-            <li><i className="fas fa-user"></i> Advitya</li>
+            <li><i className="fas fa-user"></i> Ghost</li>
             <li><i className="fas fa-map-marker-alt"></i> 123 Dubai Street, Dubai Main Road, Dubai</li>
-            <li><i className="fas fa-phone"></i> +91 9876543210</li>
+            <li><i className="fas fa-phone"></i> +91 6380588382</li>
             <li><i className="fas fa-envelope"></i> info@metahive.com</li>
           </ul>
         </div>

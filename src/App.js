@@ -13,6 +13,9 @@ import BuyerRegistration from './BuyerRegistration';
 import { AuthProvider } from './context/AuthContext';
 import BadgeGallery from './BadgeDetails';
 import Settings from './Settings';
+import ListedProperties from './ListedProperties';
+import MyPurchases from './MyPurchases';
+import Chatbot from './Chatbot';
 
 function App() {
   const NFT_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -36,7 +39,10 @@ function App() {
                 element={<BadgeGallery contractAddress={NFT_CONTRACT_ADDRESS} />} 
               />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/listed-properties" element={<ListedProperties />} />
+              <Route path="/my-purchases" element={<MyPurchases />} />
             </Routes>
+            <Chatbot />
           </div>
         </Router>
       </Web3Provider>
