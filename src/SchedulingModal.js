@@ -1,5 +1,11 @@
 import React from 'react';
 import './SchedulingModal.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPhone } from '@fortawesome/free-solid-svg-icons';
+import { SiGooglemeet } from "react-icons/si";
+import { faWhatsapp } from '@fortawesome/free-brands-svg-icons';
+import { faHome } from '@fortawesome/free-solid-svg-icons';
+
 
 function SchedulingModal({ isOpen, onClose, builderInfo, propertyInfo }) {
 
@@ -85,41 +91,37 @@ Please schedule a convenient time and join the Google Meet to discuss this prope
           <button className="close-button" onClick={onClose}>&times;</button>
         </div>
 
-        <div className="modal-content">
+       
           <div className="contact-options">
-            <h3>Contact Builder</h3>
-            <div className="contact-buttons">
+                     <div className="contact-buttons">
               <button 
                 className="contact-btn whatsapp-btn"
                 onClick={handleWhatsAppContact}
                 disabled={!builderInfo.phone || builderInfo.phone === 'Loading...'}
+                title="WhatsApp"
               >
-                <i className="fab fa-whatsapp"></i>
-                <span>WhatsApp</span>
-                <small>{builderInfo.phone === 'Loading...' ? 'Loading...' : 'Send message'}</small>
+                <span className="icon"><FontAwesomeIcon icon={faWhatsapp} /></span>
               </button>
               
               <button 
                 className="contact-btn phone-btn"
                 onClick={handlePhoneCall}
                 disabled={!builderInfo.phone || builderInfo.phone === 'Loading...'}
+                title="Call Now"
               >
-                <i className="fas fa-phone"></i>
-                <span>Call Now</span>
-                <small>{builderInfo.phone === 'Loading...' ? 'Loading...' : 'Direct call'}</small>
+                <span className="icon"><FontAwesomeIcon icon={faPhone} /></span>
               </button>
 
                <button 
                  className="contact-btn meet-btn"
                  onClick={handleGoogleMeet}
+                 title="Google Meet"
                >
-                 <i className="fab fa-google"></i>
-                 <span>Google Meet</span>
-                 <small>Schedule meeting</small>
+                 <span className="icon"><SiGooglemeet />      </span>
                </button>
              </div>
            </div>
-        </div>
+        
       </div>
     </div>
   );

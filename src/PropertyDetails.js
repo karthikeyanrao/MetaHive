@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./PropertyDetails.css";
 import home from "./home.png";
 import ThreeBackground from './ThreeBackground';
+import SchedulingModal from './SchedulingModal';
 import { ethers } from 'ethers';
 import { useWeb3 } from './context/Web3Context';
 import { useAuth } from './context/AuthContext';
@@ -37,9 +38,43 @@ function PropertyDetails() {
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  const [showSchedulingModal, setShowSchedulingModal] = useState(false);
+  const [builderInfo, setBuilderInfo] = useState({
+    name: 'Loading...',
+    email: 'Loading...',
+    phone: 'Loading...'
+  });
 
   const toggleAgentPopup = () => {
     setShowAgentPopup(!showAgentPopup);
+  };
+
+  const fetchBuilderInfo = async () => {
+    try {
+      if (property.builderId) {
+        const userDoc = await getDoc(doc(db, 'Users', property.builderId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setBuilderInfo({
+            name: userData.name || 'Not available',
+            email: userData.email || 'Not available',
+            phone: userData.phone || 'Not available'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching builder info:', error);
+      setBuilderInfo({
+        name: 'Not available',
+        email: 'Not available',
+        phone: 'Not available'
+      });
+    }
+  };
+
+  const handleScheduleViewing = () => {
+    fetchBuilderInfo();
+    setShowSchedulingModal(true);
   };
 
   const handleDelete = async () => {
@@ -425,7 +460,7 @@ function PropertyDetails() {
 
       <button 
         className="schedule-button" 
-        onClick={() => window.open("000", "_blank")}
+        onClick={handleScheduleViewing}
       >
         <i className="fas fa-calendar-alt"></i> Schedule Viewing
       </button>
@@ -503,6 +538,16 @@ function PropertyDetails() {
           </div>
         </div>
       )}
+      
+      <SchedulingModal 
+        isOpen={showSchedulingModal}
+        onClose={() => setShowSchedulingModal(false)}
+        builderInfo={builderInfo}
+        propertyInfo={{
+          title: property.title || 'Property',
+          location: property.location || 'Location not specified'
+        }}
+      />
     </>
   );
 }
