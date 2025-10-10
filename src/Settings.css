@@ -57,7 +57,7 @@
 }
 
 .user-role {
-  color: #00d4ff;
+  color: gold;
   font-size: 1.2rem;
   font-weight: 600;
   margin: 0 0 10px 0;
@@ -92,13 +92,13 @@
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  background: gold;
   color: white;
   border-color: rgba(0, 212, 255, 0.5);
 }
 
 .action-button.primary:hover {
-  background: linear-gradient(135deg, #0099cc, #007aa3);
+background: gold;
   transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
 }
@@ -311,7 +311,7 @@
 } 
 
 .logout-button {
-  background: linear-gradient(45deg,#eb6b6b, #fa0000 );
+  background: goldS;
   color: white;
   border: none;
   padding: 1rem;
@@ -322,7 +322,7 @@
 }
 
 .logout-button:hover {
-  background: linear-gradient(55deg, #fa0000, #eb6b6b);
+  background: gold;
 }
 
 .disabled-input, .readonly-input {
@@ -392,7 +392,7 @@
   width: 24px;
   height: 24px;
   cursor: pointer;
-  accent-color: #005eff;
+  accent-color: gold;
   border-radius: 6px;
 }
 
@@ -403,13 +403,13 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: linear-gradient(45deg, #ffffff, #76ffe1);
+  background: gold;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .add-property-button {
-  background: linear-gradient(45deg, #005eff, #76ffe1);
+  background: gold;
   color: white;
   border: none;
   padding: 0.8rem 1.5rem;
@@ -427,7 +427,7 @@
 .add-property-button:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 94, 255, 0.4);
-  background: linear-gradient(45deg, #76ffe1, #005eff);
+  background: gold;
 }
 
 /* Wallet info styling */

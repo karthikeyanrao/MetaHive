@@ -104,7 +104,7 @@ function BadgeGallery({ contractAddress }) {
                 />
               </div>
               <div className="badge-card-content">
-                <h3>{badge.buildingName}</h3>
+                <h3 style={{color: 'gold'}}>{badge.buildingName}</h3>
                 <p><i className="fas fa-map-marker-alt"></i> {badge.location}</p>
                 <p><i className="fas fa-calendar-check"></i> {badge.verificationDate.toLocaleDateString()}</p>
                 <p className="badge-owner">

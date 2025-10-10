@@ -9,6 +9,7 @@
 
 .property-header {
   background: rgba(26, 22, 37, 0.95);
+  color: gold;
   padding: 3rem;
   border-radius: 24px;
   margin-bottom: 2rem;
@@ -18,22 +19,58 @@
   overflow: hidden;
 }
 
+.property-header h1 {
+  color: gold;
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
+
 .header-content {
   position: relative;
   z-index: 1;
+  color: gold;
 }
 
-.property-meta {
+.title-price-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 1rem 0;
+  margin-bottom: 1rem;
+  gap: 2rem;
+}
+
+.property-price {
+  color: gold;
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+.property-location {
+  color: white;
+  text-align: right;
+  font-size: 1.2rem;
+  margin: 0.5rem 0 1rem 0;
+  display: flex-end;
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.property-location i {
+  color: #1a237e;
 }
 
 .property-tags {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .tag {
@@ -42,7 +79,7 @@
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
-  color: #52ffa8;
+  color: lightblue;
 }
 
 .gallery-container {
@@ -84,10 +121,11 @@
   cursor: pointer;
   border: 3px solid transparent;
   transition: all 0.3s ease;
+  
 }
 
 .thumbnail.active {
-  border-color:#58dafa;
+  border-color:gold;
   box-shadow: 0 0 15px rgba(82, 255, 168, 0.3);
 }
 
@@ -118,9 +156,13 @@
 }
 
 .highlights h3 {
-  color: #58dafa; 
-  margin-bottom: 1rem;
+  color: gold; 
+  margin-bottom: 1.5rem;
   font-family: "Orbitron", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .highlights ul {
@@ -139,7 +181,7 @@
   content: "→";
   position: absolute;
   left: 0;
-  color: #58dafa;
+  color: gold;
 }
 
 .property-sidebar {
@@ -171,6 +213,17 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.amenities-section h3 {
+  color: gold;
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
 }
 
 .amenity-item {
@@ -181,7 +234,7 @@
 }
 
 .amenity-item i {
-  color: #58dafa;
+  color: gold;
 }
 
 .contact-section {
@@ -203,7 +256,7 @@
 
 .agent-avatar {
   font-size: 3rem;
-  color: #58dafa;
+  color: gold;
 }
 
 .agent-details h3 {
@@ -217,16 +270,17 @@
 }
 
 .contact-buttons {
+  
   display: flex;
   gap: 1rem;
 }
 
 .schedule-button {
   padding: 1rem 2.5rem;
-  background: rgba(82, 255, 168, 0.1);
-  border: 1px solid rgba(82, 255, 168, 0.3);
+  background: #1a237e;
+  border: 2px solid gold;
   border-radius: 30px;
-  color: #58dafa;
+  color: gold;
   font-family: "Orbitron", sans-serif;
   font-size: 1.1rem;
   font-weight: 600;
@@ -234,11 +288,35 @@
   letter-spacing: 1px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .schedule-button:hover {
-  background: rgba(82, 255, 168, 0.2);
+  background: #0d1456;
   transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.contact-button {
+  padding: 1rem 2.5rem;
+  background: #1a237e;
+  border: 2px solid gold;
+  border-radius: 30px;
+  color: gold;
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.contact-button:hover {
+  background: #0d1456;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .contact-button i,
@@ -297,6 +375,7 @@
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  color:gold;
 }
 
 .feature-item::before {
@@ -306,7 +385,7 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
+  background:gold;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -314,7 +393,7 @@
 .feature-item:hover {
   transform: translateY(-5px);
   background: rgba(82, 255, 168, 0.1);
-  border-color: rgba(82, 255, 168, 0.3);
+  border-color: gold;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -331,13 +410,15 @@
   justify-content: center;
   background: rgba(82, 255, 168, 0.1);
   border-radius: 12px;
-  color: #58dafa;
+  color: gold;
   transition: all 0.3s ease;
 }
-
+.feature-title{
+  color:gold; 
+}
 .feature-item:hover .feature-icon {
-  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
-  color: #13111c;
+  background: gold;
+  color: #1a237e;
   transform: rotate(360deg);
 }
 
@@ -361,19 +442,23 @@
 
 .category-title {
   font-family: "Orbitron", sans-serif;
-  font-size: 1.3rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.5rem;
+  color: gold;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .category-title::after {
   content: "";
   flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, rgba(82, 255, 168, 0.3), transparent);
+  height: 2px;
+  background: gold;
+  border-radius: 1px;
 }
 
 .ThreeBackground {
@@ -386,8 +471,8 @@
 }
 
 .pay-button {
-  background: linear-gradient(45deg, #52FFA8, #9D6EFF);
-  color: #13111C;
+  background: gold;
+  color: darkblue;
   padding: 0.8rem 1.5rem;
   border: none;
   border-radius: 8px;

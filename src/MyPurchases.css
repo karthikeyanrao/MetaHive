@@ -45,7 +45,7 @@
 }
 
 .browse-properties-btn {
-  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  background: gold;
   color: white;
   padding: 15px 30px;
   border-radius: 25px;
@@ -58,7 +58,8 @@
 }
 
 .browse-properties-btn:hover {
-  background: linear-gradient(135deg, #0099cc, #007aa3);
+  background:darkblue;
+  color: #ffd700;
   transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
 }

@@ -171,6 +171,7 @@ function AddProperty() {
           builderId: currentUser.uid,
           builderName: userData.name,
           builderEmail: currentUser.email,
+          builderPhone: userData.phone || 'Not available',
           isSold: "New",
           rawMaterials: formData.rawMaterials,
           buildingDescription: formData.buildingDescription,

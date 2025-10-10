@@ -16,6 +16,7 @@ import b1 from './b1.jpg';
 import b2 from './b2.jpg';
 import be1 from './be1.jpg';
 import k1 from './k1.jpg';
+import { Color } from "three/src/Three.Core.js";
 
 
 function PropertyDetails() {
@@ -292,15 +293,17 @@ function PropertyDetails() {
       <ThreeBackground />
       <div className={`property-details ${isSold ? 'sold-out' : ''}`}>
         <div className="property-header">
-          <div className="header-content">
-            <h1 className="property-title">{property.title}</h1>
-            <div className="property-meta">
+          <div className="header-content" style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
+          <h1 className="property-title">{property.title}</h1>
               <div className="property-location">
                 <i className="fas fa-map-marker-alt"></i>
                 {property.location}
               </div>
+            <div className="title-price-row">
+              
               <div className="property-price">${property.amount}</div>
             </div>
+          
             <div className="property-tags">
               <span className="tag">Premium</span>
               <span className="tag">Verified</span>

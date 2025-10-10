@@ -41,7 +41,7 @@
   text-decoration: none;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(45deg, #005eff, #76ffe1);
+  background: white;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 20px rgba(82, 255, 168, 0.3);
@@ -49,7 +49,7 @@
 }
 
 .navbar-brand a:hover {
-  background: linear-gradient(45deg, #005eff, #76ffe1);
+  background:gold;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(82, 255, 168, 0.5);
@@ -76,7 +76,7 @@
 }
 
 .navbar-links a:hover {
-  color: #58dafa;
+  color: gold;
   border-color: rgba(82, 255, 168, 0.3);
   background: rgba(82, 255, 168, 0.1);
   transform: translateY(-2px);
@@ -106,11 +106,11 @@
 .navbar-links a.active {
   background: linear-gradient(45deg, rgba(82, 255, 168, 0.1), rgba(157, 110, 255, 0.1));
   border: 1px solid rgba(82, 255, 168, 0.3);
-  color: #58dafa;
+  color: gold;
 }
 
 .login-button {
-  background: linear-gradient(45deg, #005eff, #76ffe1);
+  background: gold;
   color: #13111C !important;
   padding: 0.6rem 1.5rem !important;
   border-radius: 20px;
@@ -124,12 +124,12 @@
 .login-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(82, 255, 168, 0.25);
-  background: linear-gradient(45deg, #005eff, #76ffe1) !important;
+  background: gold !important;
   color: white !important;
 }
 
 .login-button.active {
-  background: linear-gradient(45deg, #005eff, #76ffe1);
+  background: gold;
   color: white !important;
 }
 
@@ -383,7 +383,7 @@
 }
 
 .disconnect-button {
-  background: #ff4d4d;
+  background: gold;
   color: white;
   border: none;
   padding: 0.5rem;
@@ -395,7 +395,7 @@
 }
 
 .disconnect-button:hover {
-  background: #ff3333;
+  background: gold;
 }
 
 .user-profile {
@@ -407,7 +407,7 @@
 }
 
 .avatar-button {
-  background: linear-gradient(45deg, #005eff, #76ffe1);
+  background: gold;
   border: none;
   width: 40px;
   height: 40px;
@@ -431,7 +431,7 @@
 }
 
 .logout-button {
-  background: #ff4d4d;
+  background: gold;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -441,7 +441,7 @@
 }
 
 .logout-button:hover {
-  background: #ff3333;
+  background: gold;
   transform: translateY(-2px);
 }
 

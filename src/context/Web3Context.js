@@ -9,6 +9,37 @@ export function Web3Provider({ children }) {
   const connectWallet = async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
+        // Check if connected to Sepolia network
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chainId !== '0xaa36a7') { // 0xaa36a7 = 11155111 (Sepolia)
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0xaa36a7' }],
+            });
+          } catch (switchError) {
+            // If Sepolia network doesn't exist, add it
+            if (switchError.code === 4902) {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: '0xaa36a7',
+                  chainName: 'Sepolia Test Network',
+                  rpcUrls: ['https://sepolia.infura.io/v3/'],
+                  nativeCurrency: {
+                    name: 'Ethereum',
+                    symbol: 'ETH',
+                    decimals: 18,
+                  },
+                  blockExplorerUrls: ['https://sepolia.etherscan.io'],
+                }],
+              });
+            } else {
+              throw switchError;
+            }
+          }
+        }
+
         const accounts = await window.ethereum.request({ 
           method: 'eth_requestAccounts' 
         });
@@ -16,6 +47,7 @@ export function Web3Provider({ children }) {
         setIsConnected(true);
       } catch (error) {
         console.error('Error connecting to MetaMask:', error);
+        alert('Please connect to Sepolia Test Network');
       }
     } else {
       alert('Please install MetaMask to use this feature!');

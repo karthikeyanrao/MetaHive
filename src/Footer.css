@@ -46,7 +46,7 @@
   bottom: -8px;
   width: 50px;
   height: 2px;
-  background: #ff4d4d;
+  background: gold;
 }
 
 .footer-section p {
@@ -71,7 +71,7 @@
 }
 
 .footer-section ul li a:hover {
-  color: #ff4d4d;
+  color: gold;
 }
 
 .social-links {
@@ -87,7 +87,7 @@
 }
 
 .social-links a:hover {
-  color: #ff4d4d;
+  color: gold;
 }
 
 .contact-info li {
@@ -122,7 +122,7 @@
 
 .newsletter-form button {
   padding: 10px 20px;
-  background: #ff4d4d;
+  background: gold;
   color: #fff;
   border: none;
   border-radius: 4px;

@@ -5,7 +5,7 @@
   right: 20px;
   width: 65px;
   height: 65px;
-  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  background: gold;
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -22,7 +22,7 @@
 .chatbot-toggle:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 28px rgba(0, 212, 255, 0.6);
-  background: linear-gradient(135deg, #0099cc, #007aa3);
+  background: linear-gradient(135deg, #0099cc,darkblue);
 }
 
 .chatbot-toggle:focus {
