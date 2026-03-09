@@ -7,7 +7,13 @@ const admin = require('firebase-admin');
 try {
     let serviceAccount = null;
 
-    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+        // Preferred for cloud deployments (Render, Vercel, etc.)
+        // Avoids all newline/escape issues with private key strings
+        const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+        serviceAccount = JSON.parse(decoded);
+    } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+        // Fallback: individual env vars
         serviceAccount = {
             project_id: process.env.FIREBASE_PROJECT_ID,
             private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
@@ -27,7 +33,7 @@ try {
         });
         console.log('Firebase Admin initialized successfully.');
     } else {
-        console.warn('⚠️  Firebase credentials missing. Firebase Auth middleware is running in permissive/mock mode.');
+        console.warn('⚠️  Firebase credentials missing. Firebase Auth middleware is in mock mode.');
     }
 } catch (error) {
     console.error('Firebase Admin initialization error:', error);

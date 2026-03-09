@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './context/firebase';
 import { apiGetUserProfile } from './api';
 import './login.css';
@@ -31,27 +31,29 @@ function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await signInWithEmailAndPassword(
+            const userCredential = await signInWithEmailAndPassword(
                 auth,
                 formData.email,
                 formData.password
             );
 
-            // Fast verify MongoDB existence
+            // Verify MongoDB profile exists
             try {
                 await apiGetUserProfile();
-                // Successfully logged in and verified in DB
+                // Successfully logged in and profile verified — go home
                 navigate('/');
             } catch (apiError) {
-                // Firebase auth worked, but MongoDB has no record of this user.
-                await signOut(auth);
-                setError('Registration incomplete! Please register your profile below.');
-                console.error('Login error (API sync):', apiError);
-                return;
+                // Firebase auth worked, but NO MongoDB profile found.
+                // Don't lock them out — redirect to registration to complete their profile.
+                console.warn('Login: Firebase user found but no DB profile. Redirecting to register.', apiError);
+                // Store email hint so the registration form can prefill
+                localStorage.setItem('pendingRegEmail', formData.email);
+                setError('Your account is not fully set up. Please complete your registration below.');
+                // Keep user signed in so the registration form can call the API with their token
             }
 
         } catch (err) {
-            setError(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? 'Invalid email or password' : 'Login Failed.');
+            setError(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' ? 'Invalid email or password.' : 'Login Failed. Please try again.');
             console.error('Login error:', err);
         }
     };
@@ -63,7 +65,18 @@ function Login() {
                 <div className="form-wrapper sign-in">
                     <form onSubmit={handleSubmit}>
                         <h2>Login</h2>
-                        {error && <div className="error-message">{error}</div>}
+                        {error && (
+                            <div className="error-message">
+                                {error}
+                                {error.includes('not fully set up') && (
+                                    <div style={{ marginTop: '8px', fontSize: '0.9em' }}>
+                                        Complete as: &nbsp;
+                                        <Link to="/register/buyer" style={{ color: '#4fc3f7', marginRight: '8px' }}>Buyer</Link> |&nbsp;
+                                        <Link to="/register/builder" style={{ color: '#4fc3f7', marginLeft: '8px' }}>Builder</Link>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <div className="input-group">
                             <input
                                 type="email"
