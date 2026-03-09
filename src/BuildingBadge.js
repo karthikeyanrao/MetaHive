@@ -18,40 +18,38 @@ const generateQRCode = (text) => {
 const NFT_ABI = [
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "to",
-        "type": "address"
-      },
-      {
-        "internalType": "string",
-        "name": "uri",
-        "type": "string"
-      }
-    ],
-    "name": "safeMint",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "tokenURI",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
+       { internalType: 'address', name: 'recipient', type: 'address' },
+        { internalType: 'string', name: 'buildingName', type: 'string' },
+        { internalType: 'string', name: 'location', type: 'string' },
+        { internalType: 'string', name: 'badgeURI', type: 'string' }
+      ],
+      name: 'issueBadge',
+      outputs: [
+        { internalType: 'uint256', name: '', type: 'uint256' }
+      ],
+      stateMutability: 'nonpayable',
+      type: 'function'
+    },
+    {
+      anonymous: false,
+      inputs: [
+        { indexed: false, internalType: 'uint256', name: 'tokenId', type: 'uint256' },
+        { indexed: false, internalType: 'address', name: 'recipient', type: 'address' },
+        { indexed: false, internalType: 'string', name: 'buildingName', type: 'string' }
+      ],
+      name: 'BadgeIssued',
+      type: 'event'
+    },
+    {
+      anonymous: false,
+      inputs: [
+        { indexed: true, internalType: 'address', name: 'from', type: 'address' },
+        { indexed: true, internalType: 'address', name: 'to', type: 'address' },
+        { indexed: true, internalType: 'uint256', name: 'tokenId', type: 'uint256' }
+      ],
+      name: 'Transfer',
+      type: 'event'
+  
   }
 ];
 
