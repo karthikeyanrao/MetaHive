@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "./context/firebase"; // Include initialized Firestore instance
-import { doc, setDoc } from "firebase/firestore"; // Firestore functions
+import { apiCreateUserProfile } from "./api";
+import { uploadFileToIPFS } from './api/ipfs';
+import { auth } from "./context/firebase";
+import { useNavigate } from "react-router-dom";
 import './BuyerRegistration.css';
 import ThreeBackground from './ThreeBackground';
 
@@ -68,42 +70,57 @@ function BuyerRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Scroll to the top of the page
     window.scrollTo(0, 0);
 
     try {
+      let aadharProofUrl = null;
+      if (formData.aadharProof) {
+        setSuccess("Uploading Aadhar Proof to IPFS...");
+        aadharProofUrl = await uploadFileToIPFS(formData.aadharProof);
+      }
       // Step 1: Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      let userCredential;
+      try {
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
+      } catch (authErr) {
+        if (authErr.code === 'auth/email-already-in-use') {
+          // Fallback: This fixes the deadlock where Firebase user exists but MongoDB profile does not.
+          console.log("Firebase account already exists. Signing in to complete MongoDB registration...");
+          const { signInWithEmailAndPassword } = require("firebase/auth");
+          userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        } else {
+          throw authErr;
+        }
+      }
 
       const user = userCredential.user;
 
-      // Step 2: Save additional details in Firestore under Users collection
+      // Step 2: Save additional details via api
       const buyerData = {
-        name: formData.name,
+        fullName: formData.name,
         aadharId: formData.aadharId,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
         annualIncome: formData.annualIncome,
         panNumber: formData.panNumber,
-        registrationDate: new Date().toISOString(),
-        userId: user.uid,
-        role: 'Buyer' // Set default role to Buyer
+        aadharProof: aadharProofUrl,
+        userType: 'buyer'
       };
 
-      // Save to Firestore in Users collection
-      await setDoc(doc(db, "Users", user.uid), buyerData);
+      // Call mapping API (automatically passes Firebase token)
+      await apiCreateUserProfile(buyerData);
 
       setSuccess(`Buyer registered successfully! Welcome, ${formData.name}`);
       setError(null);
-      
+
       // Clear form after successful registration
       setFormData({
-        name: '', 
+        name: '',
         aadharId: '',
         aadharProof: null,
         email: '',
@@ -113,7 +130,8 @@ function BuyerRegistration() {
         annualIncome: '',
         panNumber: ''
       });
-      history.push('/');
+      // Redirect using modern structure
+      window.location.href = '/';
     } catch (err) {
       setError(err.message);
       setSuccess(null);
@@ -121,7 +139,7 @@ function BuyerRegistration() {
     }
   };
 
-  return (  
+  return (
     <div>
       <ThreeBackground />
       <div className="buyer-registration">
@@ -188,7 +206,7 @@ function BuyerRegistration() {
               <small>Upload your Aadhar card (PDF, JPG, PNG)</small>
             </div>
 
-          
+
             <div className="form-row">
               <div className="form-group">
                 <label>Email *</label>

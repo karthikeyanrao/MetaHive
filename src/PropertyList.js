@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { db } from './context/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { apiGetAllProperties } from './api';
 import 'leaflet/dist/leaflet.css';
 import image1 from './home.png';
 import './PropertyList.css';
@@ -49,19 +48,48 @@ function PropertyList() {
 
   const fetchProperties = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'properties'));
-      const firestoreProperties = querySnapshot.docs.map((doc) => {
-        const data = doc.data();
-        const latitude = data.lat !== undefined ? data.lat : 12.9716;
-        const longitude = data.lng !== undefined ? data.lng : 77.5946;
+      const apidocs = await apiGetAllProperties();
+      const firestoreProperties = apidocs.map((doc) => {
+        const pDetails = doc.propertyDetails || {};
+
+        // Parse location - could be flat string "lat,lng", an object {lat,lng}, or missing
+        let latitude = 12.9716;
+        let longitude = 77.5946;
+        if (pDetails.location?.lat !== undefined) {
+          latitude = pDetails.location.lat;
+          longitude = pDetails.location.lng;
+        } else if (typeof doc.location === 'string' && doc.location.includes(',')) {
+          const parts = doc.location.split(',');
+          latitude = parseFloat(parts[0]) || latitude;
+          longitude = parseFloat(parts[1]) || longitude;
+        } else if (typeof doc.location === 'object' && doc.location?.lat) {
+          latitude = doc.location.lat;
+          longitude = doc.location.lng;
+        }
+
+        // Real images: normalize from both flat and nested schemas
+        const rawImages = (() => {
+          const raw = pDetails.images || doc.images || [];
+          if (Array.isArray(raw)) return raw.filter(url => typeof url === 'string' && url.startsWith('http'));
+          if (typeof raw === 'string' && raw.startsWith('http')) return [raw];
+          return [];
+        })();
 
         return {
-          id: doc.id,
-          ...data,
+          id: doc._id,
+          title: pDetails.title || doc.title || 'Untitled Property',
+          location: pDetails.address || doc.location || doc.address || 'Unknown Location',
+          price: pDetails.price || doc.price || 0,
+          bedrooms: pDetails.bedrooms || doc.bedrooms || 0,
+          bathrooms: pDetails.bathrooms || doc.bathrooms || 0,
+          area: pDetails.area || doc.area || 0,
+          isSold: (doc.status || '').toLowerCase() === 'sold' || (doc.isSold || '').toLowerCase() === 'sold' ? 'Sold' : 'New',
           lat: latitude,
           lng: longitude,
-          images: [img1, img2, img3, img4, img6],
-          randomImage: [img1, img2, img3, img4, img6][Math.floor(Math.random() * 5)],
+          images: rawImages.length > 0 ? rawImages : [img1, img2, img3, img4, img6],
+          randomImage: rawImages.length > 0
+            ? rawImages[0]
+            : [img1, img2, img3, img4, img6][Math.floor(Math.random() * 5)],
         };
       });
 
@@ -75,10 +103,10 @@ function PropertyList() {
     .filter((property) => {
       // Show available properties or sold properties based on toggle
       const isAvailable = showSoldProperties ? true : property.isSold !== 'Sold';
-      
+
       const matchesSearch =
-        property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        property.location.toLowerCase().includes(searchTerm.toLowerCase());
+        (property.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (property.location || '').toLowerCase().includes(searchTerm.toLowerCase());
 
       let matchesPrice = true;
       if (priceRange === 'low') {
@@ -130,7 +158,7 @@ function PropertyList() {
               <option value="Low">Low to High</option>
               <option value="High">High to Low</option>
             </select>
-            <button 
+            <button
               className={`toggle-sold-btn ${showSoldProperties ? 'active' : ''}`}
               onClick={() => setShowSoldProperties(!showSoldProperties)}
             >
@@ -143,7 +171,7 @@ function PropertyList() {
           <p>
             {showSoldProperties ? (
               <>
-                🏠 Showing {filteredProperties.length} properties (including sold)
+                Showing {filteredProperties.length} properties (including sold)
                 {properties.length !== filteredProperties.length && (
                   <span style={{ color: '#ff6b6b', marginLeft: '10px' }}>
                     ({properties.length - filteredProperties.length} properties filtered out)
@@ -165,9 +193,9 @@ function PropertyList() {
 
         <div className="properties-grid">
           {filteredProperties.length === 0 ? (
-            <div className="no-properties" style={{ 
-              textAlign: 'center', 
-              padding: '40px', 
+            <div className="no-properties" style={{
+              textAlign: 'center',
+              padding: '40px',
               color: '#666',
               background: 'rgba(255, 255, 255, 0.1)',
               borderRadius: '10px',
@@ -205,8 +233,25 @@ function PropertyList() {
                   </span>
                 </p>
                 {visibleMap === property.id && (
-                  <div className="mini-map">
-                    <MapContainer center={[property.lat, property.lng]} zoom={15} style={{ height: '200px', width: '100%' }}>
+                  <div className="mini-map" style={{ marginTop: '10px' }}>
+                    <div style={{ marginBottom: '8px', textAlign: 'right' }}>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${property.lat},${property.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          color: 'gold',
+                          textDecoration: 'none',
+                          fontSize: '0.9rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <i className="fas fa-map-marked-alt"></i> Open in Google Maps
+                      </a>
+                    </div>
+                    <MapContainer center={[property.lat, property.lng]} zoom={15} style={{ height: '200px', width: '100%', borderRadius: '8px' }}>
                       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                       <Marker position={[property.lat, property.lng]} icon={redMarker}>
                         <Popup>

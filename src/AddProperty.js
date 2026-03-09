@@ -1,16 +1,24 @@
 import React, { useState, useContext, useEffect } from 'react';
 import './AddProperty.css';
 import ThreeBackground from './ThreeBackground';
-import { db } from './context/firebase';
-import { collection, addDoc, getDoc, doc, updateDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+import { uploadFileToIPFS } from './api/ipfs';
+import { apiCreateProperty } from './api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 
 function AddProperty() {
   const navigate = useNavigate();
-  const { user, currentUser } = useAuth();
+  const { currentUser, dbUser, userRole } = useAuth();
+
+  // Role guard - only builders can add properties
+  useEffect(() => {
+    if (userRole && userRole !== 'Builder' && userRole !== 'builder') {
+      alert('Only builders can add properties.');
+      navigate('/');
+    }
+  }, [userRole, navigate]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,25 +46,13 @@ function AddProperty() {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
-    const fetchUserName = async () => {
-      if (user && user.email) {
-        try {
-          const userDoc = await getDoc(doc(db, 'Users', user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setFormData(prevData => ({
-              ...prevData,
-              name: userData.name || ''
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      }
-    };
-
-    fetchUserName();
-  }, [user]);
+    if (dbUser) {
+      setFormData(prevData => ({
+        ...prevData,
+        name: dbUser.fullName || dbUser.name || currentUser?.displayName || ''
+      }));
+    }
+  }, [dbUser, currentUser]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,148 +73,124 @@ function AddProperty() {
     }));
   };
 
+  const MAX_IMAGES = 5;
+
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    setSelectedFiles(files);
+    if (files.length > MAX_IMAGES) {
+      alert(`You can upload a maximum of ${MAX_IMAGES} images. Only the first ${MAX_IMAGES} will be used.`);
+      setSelectedFiles(files.slice(0, MAX_IMAGES));
+    } else {
+      setSelectedFiles(files);
+    }
   };
 
-  const handleUpload = async (e) => {
-    // Prevent any accidental double-fires from parent form onSubmit
-    if (e && e.preventDefault) e.preventDefault();
-
-    const uniqueId = uuidv4();
+  const handleUpload = async () => {
+    setIsLoading(true);
 
     if (!formData.title || !formData.price || !formData.streetNumber || !formData.completeAddress) {
       alert("Please fill in all required fields (Title, Price, Street Number, and Complete Address)");
+      setIsLoading(false);
       return;
     }
 
-    await handleSubmit(uniqueId);
-  };
+    let ipfsUrls = [];
 
-  const handleSubmit = async (uniqueId) => {
-    setIsLoading(true);
-
-    try {
-      // Enhanced geocoding for global locations
-      const locationQuery = encodeURIComponent(formData.completeAddress);
-
-      // Use multiple geocoding strategies for better global coverage
-      const geocodingPromises = [
-        // Primary: OpenStreetMap Nominatim (global coverage)
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&addressdetails=1&extratags=1&namedetails=1&countrycodes=&accept-language=en`),
-
-        // Fallback: Try with different parameters for better international results
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&addressdetails=1&extratags=1&namedetails=1&countrycodes=&accept-language=en&dedupe=0`)
-      ];
-
-      let data = [];
-      let response;
-
-      // Try primary geocoding first
+    if (selectedFiles.length > 0) {
       try {
-        response = await geocodingPromises[0];
-        data = await response.json();
+        const uploadPromises = selectedFiles.map(file => uploadFileToIPFS(file));
+        ipfsUrls = await Promise.all(uploadPromises);
       } catch (error) {
-        response = await geocodingPromises[1];
-        data = await response.json();
-      }
-
-      if (data.length === 0) {
-        alert("Location not found. Please verify the address details. Make sure to include country name for international addresses.");
+        console.error('Error uploading images to IPFS:', error);
+        alert("Failed to upload images. Check IPFS connection or file sizes.");
         setIsLoading(false);
         return;
       }
+    }
 
-      const lat = parseFloat(data[0].lat);
-      const lng = parseFloat(data[0].lon);
-      const displayName = data[0].display_name;
-      const country = data[0].address?.country || 'Unknown';
-      const countryCode = data[0].address?.country_code || 'XX';
+    handleSubmit(ipfsUrls);
+  };
 
-      const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
+  const handleSubmit = async (ipfsUrls) => {
+    setIsLoading(true);
 
-        const propertyData = {
-          id: uniqueId,
-          title: formData.title,
-          price: Number(formData.price),
-          streetNumber: formData.streetNumber,
-          location: formData.completeAddress,
-          bedrooms: Number(formData.bedrooms),
-          bathrooms: Number(formData.bathrooms),
-          area: Number(formData.area),
-          description: formData.description,
-          NftMinted: formData.NftMinted,
-          lat: lat,
-          lng: lng,
-          displayName: displayName,
-          country: country,
-          countryCode: countryCode,
-          createdAt: new Date().toISOString(),
-          builderId: currentUser.uid,
-          builderName: userData.name,
-          builderEmail: currentUser.email,
-          builderPhone: userData.phone || 'Not available',
-          isSold: "New",
-          rawMaterials: formData.rawMaterials,
-          buildingDescription: formData.buildingDescription,
-          details: formData.details,
-          furnishedStatus: formData.furnishedStatus,
-          amenities: formData.amenities,
-          images: []
-        };
+    try {
+      // Try geocoding but DON'T fail the whole form if it returns nothing
+      let lat = 12.9716;   // Default: Bangalore, India
+      let lng = 77.5946;
 
-        const docRef = await addDoc(collection(db, 'properties'), propertyData);
-        localStorage.setItem('propertyId', uniqueId);
-
-        // Upload images to Firebase Storage (#16)
-        if (selectedFiles.length > 0) {
-          const storage = getStorage();
-          const imageUrls = [];
-          for (const file of selectedFiles) {
-            const storageRef = ref(storage, `properties/${uniqueId}/${file.name}`);
-            await uploadBytes(storageRef, file);
-            const downloadUrl = await getDownloadURL(storageRef);
-            imageUrls.push(downloadUrl);
-          }
-          // Persist URLs back to the Firestore document
-          await updateDoc(docRef, { images: imageUrls });
+      try {
+        const locationQuery = encodeURIComponent(formData.completeAddress);
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&accept-language=en`
+        );
+        const data = await response.json();
+        if (data.length > 0) {
+          lat = parseFloat(data[0].lat);
+          lng = parseFloat(data[0].lon);
+        } else {
+          console.warn('Geocoding returned 0 results for:', formData.completeAddress, '- using default coordinates');
         }
-
-        alert('Property listed successfully! Redirecting to properties page...');
-
-        setFormData({
-          title: '',
-          price: '',
-          streetNumber: '',
-          completeAddress: '',
-          bedrooms: '',
-          bathrooms: '',
-          area: '',
-          description: '',
-          NftMinted: 'No',
-          name: '',
-          rawMaterials: '',
-          buildingDescription: '',
-          details: '',
-          furnishedStatus: 'Non-Furnished',
-          amenities: {
-            carParking: false,
-            swimmingPool: false,
-            security: false,
-            cctv: false,
-          }
-        });
-        setSelectedFiles([]);
-
-        setTimeout(() => {
-          navigate('/properties');
-        }, 2000);
+      } catch (geoErr) {
+        console.warn('Geocoding failed, using default coords:', geoErr.message);
       }
+
+      await apiCreateProperty({
+        // Flat root fields - matching Firestore/MongoDB schema
+        title: formData.title,
+        description: formData.description,
+        price: Number(formData.price),
+        address: formData.completeAddress,
+        location: `${lat},${lng}`,
+        bedrooms: Number(formData.bedrooms),
+        bathrooms: Number(formData.bathrooms),
+        area: Number(formData.area),
+        rawMaterials: formData.rawMaterials,
+        buildingDescription: formData.buildingDescription,
+        details: formData.details,
+        furnishedStatus: formData.furnishedStatus,
+        amenities: Object.keys(formData.amenities).filter(k => formData.amenities[k]),
+        images: ipfsUrls,
+        NftMinted: 'No',
+        builderName: dbUser?.fullName || dbUser?.builderName || dbUser?.name || currentUser?.displayName || '',
+        builderEmail: currentUser?.email || '',
+        status: 'listed'
+      });
+
+      alert('Property listed successfully! Redirecting to your listed properties...');
+
+      setFormData({
+        title: '',
+        price: '',
+        streetNumber: '',
+        completeAddress: '',
+        bedrooms: '',
+        bathrooms: '',
+        area: '',
+        description: '',
+        NftMinted: 'No',
+        name: '',
+        rawMaterials: '',
+        buildingDescription: '',
+        details: '',
+        furnishedStatus: 'Non-Furnished',
+        amenities: {
+          carParking: false,
+          swimmingPool: false,
+          security: false,
+          cctv: false,
+        }
+      });
+      setSelectedFiles([]);
+
+      setTimeout(() => {
+        navigate('/listed-properties');
+      }, 1500);
     } catch (error) {
-      alert('Failed to add property. Please try again.');
+      console.error('Error adding property:', error);
+      // Show the actual server error message
+      const msg = error?.message || 'Unknown error';
+      alert(`Failed to add property: ${msg}`);
     } finally {
       setIsLoading(false);
     }
@@ -469,6 +441,7 @@ function AddProperty() {
               multiple
               accept="image/*"
               onChange={handleFileChange}
+              required
             />
           </div>
 

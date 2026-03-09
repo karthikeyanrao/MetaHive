@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from './context/firebase';
+import { apiCreateUserProfile } from './api';
+import { uploadFileToIPFS } from './api/ipfs';
 import './BuilderRegistration.css';
 import ThreeBackground from './ThreeBackground';
 
@@ -13,14 +15,13 @@ function BuilderRegistration() {
     phone: '',
     address: '',
     password: '',
-    aadharNo: ''
+    aadharNo: '',
+    licenseImageFile: null
   });
 
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
 
-  const auth = getAuth();
-  const db = getFirestore();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,31 +36,46 @@ function BuilderRegistration() {
     window.scrollTo(0, 0); // Scroll to the top of the window
     try {
       // Step 1: Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      let userCredential;
+      try {
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
+      } catch (authErr) {
+        if (authErr.code === 'auth/email-already-in-use') {
+          console.log("Firebase account already exists. Signing in to complete MongoDB registration...");
+          const { signInWithEmailAndPassword } = require("firebase/auth");
+          userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        } else {
+          throw authErr;
+        }
+      }
 
       const user = userCredential.user;
 
-      // Step 2: Save user details in Firestore under Users collection
+      let licenseImageUrl = null;
+      if (formData.licenseImageFile) {
+        setSuccess("Uploading License Image to IPFS...");
+        licenseImageUrl = await uploadFileToIPFS(formData.licenseImageFile);
+      }
+
+      // Step 2: Save user details using API
       const userData = {
-        name: formData.name,
+        fullName: formData.name,
         companyName: formData.companyName,
         licenseNumber: formData.licenseNumber,
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
         aadharNo: formData.aadharNo,
-        role: 'Builder',
-        registrationDate: new Date().toISOString(),
-        userId: user.uid,
-        licenseImage: localStorage.getItem('licenseImage') // Store license image path
+        userType: 'builder',
+        licenseImage: licenseImageUrl
       };
 
-      // Save to Firestore in Users collection
-      await setDoc(doc(db, "Users", user.uid), userData);
+      // Create through API
+      await apiCreateUserProfile(userData);
 
       setSuccess(`User registered successfully! Welcome, ${formData.name}`);
       setError(null);
@@ -86,13 +102,13 @@ function BuilderRegistration() {
     }
   };
 
-  // New function to handle license image upload
   const handleLicenseImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setFormData(prev => ({ ...prev, licenseImageFile: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
-        localStorage.setItem('licenseImage', reader.result); // Store image in local storage
+        localStorage.setItem('licenseImage', reader.result); // local preview
       };
       reader.readAsDataURL(file);
     }
@@ -167,7 +183,7 @@ function BuilderRegistration() {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label>Email *</label>
               <input
@@ -215,7 +231,7 @@ function BuilderRegistration() {
               />
             </div>
 
-          
+
 
             <button type="submit" className="submit-button">
               Register as Builder
@@ -227,4 +243,4 @@ function BuilderRegistration() {
   );
 }
 
-export default BuilderRegistration; 
+export default BuilderRegistration;

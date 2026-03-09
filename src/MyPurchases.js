@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
-import { db } from './context/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+
+import { apiGetMyPurchases } from './api';
 import { Link, useNavigate } from 'react-router-dom';
 import './MyPurchases.css';
 import ThreeBackground from './ThreeBackground';
@@ -12,27 +12,39 @@ function MyPurchases() {
   const [purchasedProperties, setPurchasedProperties] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Consider lowercase 'buyer' as well as uppercase 'Buyer'
+  const isBuyer = userRole?.toLowerCase() === 'buyer';
+
   useEffect(() => {
-    if (userRole === 'Buyer' && currentUser?.uid) {
+    if (isBuyer && currentUser?.uid) {
       fetchPurchasedProperties();
     } else {
       setLoading(false);
     }
-  }, [currentUser, userRole]);
+  }, [currentUser, userRole, isBuyer]);
 
   const fetchPurchasedProperties = async () => {
     try {
-      // Query properties purchased by this buyer
-      const q = query(
-        collection(db, 'properties'),
-        where('buyerId', '==', currentUser.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      const purchasedPropertiesData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const data = await apiGetMyPurchases();
+
+      const purchasedPropertiesData = data.map((doc) => {
+        const pDetails = doc.propertyId?.propertyDetails || {};
+        return {
+          id: doc.propertyId?._id || doc._id,
+          purchaseId: doc._id,
+          title: pDetails.title,
+          price: doc.amount || pDetails.price,
+          location: pDetails.address,
+          bedrooms: pDetails.bedrooms,
+          bathrooms: pDetails.bathrooms,
+          area: pDetails.area,
+          // NftMinted is checked from the root property doc, then fallback to pDetails
+          NftMinted: doc.propertyId?.NftMinted || pDetails.NftMinted || 'No',
+          builderName: doc.propertyId?.builderName || 'Unknown Builder',
+          // Use the purchase creation date
+          soldAt: doc.createdAt
+        };
+      });
 
       setPurchasedProperties(purchasedPropertiesData);
     } catch (error) {
@@ -53,7 +65,7 @@ function MyPurchases() {
     );
   }
 
-  if (userRole !== 'Buyer') {
+  if (!isBuyer) {
     return (
       <>
         <ThreeBackground />
@@ -121,7 +133,7 @@ function MyPurchases() {
                       <span className="nft-badge">NFT Minted</span>
                     )}
                   </div>
-                  
+
                   <Link to={`/property/${property.id}`} className="property-link">
                     <div className="property-image">
                       <img src="/home.png" alt={property.title} />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './context/AuthContext';
-import { db } from './context/firebase';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
+
+import { apiGetBuilderProperties, apiDeleteProperty } from './api';
 import { Link, useNavigate } from 'react-router-dom';
 import './ListedProperties.css';
 import ThreeBackground from './ThreeBackground';
@@ -13,8 +13,10 @@ function ListedProperties() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, new, sold
 
+  const isBuilder = userRole === 'Builder' || userRole === 'builder';
+
   useEffect(() => {
-    if (userRole === 'Builder' && currentUser?.uid) {
+    if (isBuilder && currentUser?.uid) {
       fetchListedProperties();
     } else {
       setLoading(false);
@@ -23,15 +25,32 @@ function ListedProperties() {
 
   const fetchListedProperties = async () => {
     try {
-      const q = query(
-        collection(db, 'properties'),
-        where('builderId', '==', currentUser.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      const propertiesData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const docs = await apiGetBuilderProperties();
+      const propertiesData = docs.map((doc) => {
+        // Extract first real image URL from flat or nested schema
+        const rawImages = (() => {
+          const raw = doc.propertyDetails?.images || doc.images || [];
+          if (Array.isArray(raw)) return raw.filter(url => typeof url === 'string' && url.startsWith('http'));
+          if (typeof raw === 'string' && raw.startsWith('http')) return [raw];
+          return [];
+        })();
+
+        return {
+          id: doc._id,
+          isSold: (doc.status || '').toLowerCase() === 'sold' || (doc.isSold || '').toLowerCase() === 'yes' || (doc.isSold || '').toLowerCase() === 'sold' ? 'Sold' : 'New',
+          title: doc.propertyDetails?.title || doc.title || 'Untitled Property',
+          price: doc.propertyDetails?.price || doc.price || 0,
+          location: doc.propertyDetails?.address || doc.location || doc.address || 'Unknown Location',
+          bedrooms: doc.propertyDetails?.bedrooms || doc.bedrooms || 0,
+          bathrooms: doc.propertyDetails?.bathrooms || doc.bathrooms || 0,
+          area: doc.propertyDetails?.area || doc.area || 0,
+          NftMinted: doc.NftMinted || doc.propertyDetails?.NftMinted || 'No',
+          builderId: doc.builderId,
+          description: doc.propertyDetails?.description || doc.description || doc.buildingDescription || 'No description',
+          createdAt: doc.createdAt,
+          thumbnail: rawImages.length > 0 ? rawImages[0] : null
+        };
+      });
       setProperties(propertiesData);
     } catch (error) {
       console.error('Error fetching listed properties:', error);
@@ -43,7 +62,9 @@ function ListedProperties() {
   const handleDeleteProperty = async (propertyId) => {
     if (window.confirm('Are you sure you want to delete this property?')) {
       try {
-        await deleteDoc(doc(db, 'properties', propertyId));
+        console.log('[ListedProperties] Deleting property:', propertyId);
+        await apiDeleteProperty(propertyId);
+        console.log('[ListedProperties] Delete API success');
         setProperties(properties.filter(prop => prop.id !== propertyId));
         alert('Property deleted successfully!');
       } catch (error) {
@@ -71,7 +92,7 @@ function ListedProperties() {
     );
   }
 
-  if (userRole !== 'Builder') {
+  if (!isBuilder) {
     return (
       <>
         <ThreeBackground />
@@ -102,19 +123,19 @@ function ListedProperties() {
         </div>
 
         <div className="filters">
-          <button 
+          <button
             className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
           >
             All Properties ({properties.length})
           </button>
-          <button 
+          <button
             className={`filter-btn ${filter === 'new' ? 'active' : ''}`}
             onClick={() => setFilter('new')}
           >
             Available ({properties.filter(p => p.isSold === 'New').length})
           </button>
-          <button 
+          <button
             className={`filter-btn ${filter === 'sold' ? 'active' : ''}`}
             onClick={() => setFilter('sold')}
           >
@@ -126,8 +147,8 @@ function ListedProperties() {
           <div className="no-properties">
             <h3>No properties found</h3>
             <p>
-              {filter === 'all' 
-                ? "You haven't listed any properties yet." 
+              {filter === 'all'
+                ? "You haven't listed any properties yet."
                 : `No ${filter} properties found.`
               }
             </p>
@@ -146,10 +167,14 @@ function ListedProperties() {
                     {property.isSold}
                   </span>
                 </div>
-                
+
                 <Link to={`/property/${property.id}`} className="property-link">
                   <div className="property-image">
-                    <img src="/home.png" alt={property.title} />
+                    <img
+                      src={property.thumbnail || '/home.png'}
+                      alt={property.title}
+                      onError={(e) => { e.target.src = '/home.png'; }}
+                    />
                   </div>
                   <div className="property-info">
                     <h3>{property.title}</h3>
@@ -166,8 +191,8 @@ function ListedProperties() {
                   <Link to={`/property/${property.id}`} className="action-btn view">
                     View Details
                   </Link>
-                  {property.isSold === 'New' && (
-                    <button 
+                  {property.isSold === 'New' && property.builderId === currentUser?.uid && (
+                    <button
                       className="action-btn delete"
                       onClick={() => handleDeleteProperty(property.id)}
                     >

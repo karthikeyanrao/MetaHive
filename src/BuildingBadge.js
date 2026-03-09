@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserProvider, Contract } from 'ethers';
-import { db } from './context/firebase';
-import { collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { apiGetBadgeByProperty, apiCreateBadge, apiGetPropertyById } from './api';
 import { ethers } from 'ethers';
 import './BuildingBadge.css';
 import { useAuth } from './context/AuthContext';
@@ -10,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // QR Code generation function
 const generateQRCode = (text) => {
-  const qrSize = 150; // Smaller size for better badge proportion
+  const qrSize = 150;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(text)}`;
   return qrUrl;
 };
@@ -69,178 +67,140 @@ const NFT_ABI = [
   }
 ];
 
-function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
+// propertyId  — MongoDB _id of the property (passed from PropertyDetails)
+// onMinted   — callback to notify PropertyDetails that minting succeeded
+function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, propertyId, onMinted }) {
   const { currentUser, userRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [minting, setMinting] = useState(false);
   const [showMintForm, setShowMintForm] = useState(false);
-  const [showMintPopup, setShowMintPopup] = useState(false);
-  const [mintFormData, setMintFormData] = useState({
-    buildingName: '',
-    location: ''
-  });
-  const [propertyId, setPropertyId] = useState('');
   const [propertyDetails, setPropertyDetails] = useState(null);
-  const [createdAt, setCreatedAt] = useState(null);
-  const [mintingContract, setMintingContract] = useState(null);
   const [badgeData, setBadgeData] = useState(null);
   const [qrCodeLoading, setQrCodeLoading] = useState(false);
 
-  const storage = getStorage();
-
-  // Generate a unique identifier for the property if none is provided
-  const propertyIdentifier = `property_${contractAddress}_${propertyTitle}`;
-
-  // Log the nftMinted status when the component mounts
+  // ─── Fetch property details from MongoDB ───────────────────────────────────
   useEffect(() => {
-
-  }, [nftMinted]); // Dependency array to run effect when nftMinted changes
-
-  // Fetch property details when the component mounts or propertyTitle changes
-  useEffect(() => {
+    if (!propertyId) return;
     const fetchPropertyDetails = async () => {
-      setLoading(true); // Set loading to true while fetching
+      setLoading(true);
       try {
-        const propertiesCollection = collection(db, 'properties'); // Reference to the properties collection
-        const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle)); // Query to fetch property by title
-        const querySnapshot = await getDocs(propertyQuery); // Execute the query
-
-        if (!querySnapshot.empty) {
-          const propertyDoc = querySnapshot.docs[0].data(); // Get the first document's data
-          setPropertyDetails(propertyDoc); // Set the property details in state
-
+        const docData = await apiGetPropertyById(propertyId);
+        if (docData) {
+          // DB may be flat (top-level fields) or nested (under propertyDetails).
+          // Merge both so fields like address, area, bedrooms are always available.
+          const nested = docData.propertyDetails || {};
+          setPropertyDetails({
+            ...nested,
+            // flat fields win if nested is empty
+            location: nested.location || docData.location || docData.address || '',
+            address: nested.address || docData.address || '',
+            area: nested.area || docData.area || '',
+            bedrooms: nested.bedrooms || docData.bedrooms || '',
+            bathrooms: nested.bathrooms || docData.bathrooms || '',
+            NftMinted: nested.NftMinted || docData.NftMinted || 'No',
+            builderId: docData.builderId,
+          });
         } else {
-          console.error('No property found with the given title.');
+          console.error('No property found with the given id:', propertyId);
         }
       } catch (error) {
         console.error('Error fetching property details:', error);
       } finally {
-        setLoading(false); // Set loading to false after fetching
+        setLoading(false);
       }
     };
+    fetchPropertyDetails();
+  }, [propertyId]);
 
-    fetchPropertyDetails(); // Call the function to fetch property details
-  }, [propertyTitle]); // Dependency array to run effect when propertyTitle changes
-
-  // Fetch badge data when component mounts
+  // ─── Fetch existing badge data from MongoDB ────────────────────────────────
   useEffect(() => {
+    if (!propertyId) return;
     const fetchBadgeData = async () => {
-      if (propertyTitle) {  // Changed condition to only check for propertyTitle
-        try {
+      try {
+        const docData = await apiGetPropertyById(propertyId);
+        if (!docData) return;
 
-          const propertiesCollection = collection(db, 'properties');
-          const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle));
-          const querySnapshot = await getDocs(propertyQuery);
+        // NftMinted lives as a flat field on the doc (not inside propertyDetails)
+        const pDetails = docData.propertyDetails || {};
+        const mintedFlag = docData.NftMinted || pDetails.NftMinted;
+        const bId = docData.builderId;
 
-          if (!querySnapshot.empty) {
-            const propertyDoc = querySnapshot.docs[0].data();
-            if (propertyDoc.NftMinted === "Yes" && propertyDoc.nftData) {
-              const nftData = propertyDoc.nftData;
+        // Update propertyDetails to ensure builderId is available for canUserMint
+        setPropertyDetails(prev => ({ ...prev, builderId: bId }));
 
-              // Generate QR code if transaction hash exists but QR code is missing
-              let qrCodeUrl = nftData.qrCodeUrl;
-              if (nftData.transactionHash && nftData.transactionHash !== 'No Transaction Hash' && !qrCodeUrl) {
-                setQrCodeLoading(true);
-                qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${nftData.transactionHash}`);
+        console.log('[BuildingBadge] propertyId:', propertyId);
+        console.log('[BuildingBadge] NftMinted (flat):', docData.NftMinted, '| (nested):', pDetails.NftMinted, '=> resolved:', mintedFlag);
 
-                // Update Firestore with the generated QR code to persist it
-                try {
-                  await updateDoc(doc(db, 'properties', querySnapshot.docs[0].id), {
-                    'nftData.qrCodeUrl': qrCodeUrl
-                  });
-                  console.log('QR code saved to Firestore');
-                } catch (updateError) {
-                  console.error('Error updating QR code in Firestore:', updateError);
-                }
+        if (mintedFlag === 'Yes') {
+          // ── Try dedicated badge collection first ─────────────────────────
+          try {
+            const badge = await apiGetBadgeByProperty(propertyId);
+            console.log('[BuildingBadge] Badge fetched from /badges/property:', badge);
+            if (badge) {
+              let qrCodeUrl = badge.qrCodeUrl;
+              if (badge.transactionHash && badge.transactionHash !== 'No Transaction Hash' && !qrCodeUrl) {
+                qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${badge.transactionHash}`);
               }
-
               setBadgeData({
-                tokenId: nftData.tokenId || 'No Token ID',
-                mintedBy: nftData.mintedBy || 'No Minter Address',
-                mintedAt: nftData.mintedAt || null,
-                transactionHash: nftData.transactionHash || 'No Transaction Hash',
+                tokenId: badge.tokenId || 'No Token ID',
+                mintedBy: badge.mintedBy || 'No Minter Address',
+                mintedAt: badge.mintedAt || null,
+                transactionHash: badge.transactionHash || 'No Transaction Hash',
                 qrCodeUrl: qrCodeUrl || ''
               });
-            } else {
-              console.log("NFT not minted or no NFT data available");
-              setBadgeData(null);
+              return;
             }
-          } else {
-            console.log("No property found with title:", propertyTitle);
+          } catch (badgeErr) {
+            console.warn('[BuildingBadge] Badge endpoint error (falling back to nftData):', badgeErr.message);
           }
-        } catch (error) {
-          console.error("Error in fetchBadgeData:", error);
-        }
-      } else {
 
+          // ── Fallback: read nftData embedded directly on the property ─────
+          const nftData = docData.nftData || pDetails.nftData;
+          console.log('[BuildingBadge] nftData fallback:', nftData);
+          if (nftData) {
+            let qrCodeUrl = nftData.qrCodeUrl;
+            if (nftData.transactionHash && !qrCodeUrl) {
+              qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${nftData.transactionHash}`);
+            }
+            setBadgeData({
+              tokenId: nftData.tokenId || 'No Token ID',
+              mintedBy: nftData.mintedBy || 'No Minter Address',
+              mintedAt: nftData.mintedAt || null,
+              transactionHash: nftData.transactionHash || 'No Transaction Hash',
+              qrCodeUrl: qrCodeUrl || ''
+            });
+          } else {
+            console.warn('[BuildingBadge] NftMinted=Yes but no badge or nftData found on property.');
+            setBadgeData(null);
+          }
+        } else {
+          console.log('[BuildingBadge] NftMinted is not Yes — showing mint button.');
+          setBadgeData(null);
+        }
+      } catch (error) {
+        console.error('Error in fetchBadgeData:', error);
       }
     };
-
     fetchBadgeData();
-  }, [propertyTitle]); // Simplified dependency array
+  }, [propertyId]);
 
-  // Add useEffect to log current user details
-  useEffect(() => {
-    if (currentUser) {
-
-      const fetchUserDetails = async () => {
-        try {
-          const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-          }
-        } catch (error) {
-          console.error("Error fetching user details:", error);
-        }
-      };
-
-      fetchUserDetails();
-    } else {
-      console.log("No user is currently signed in");
-    }
-  }, [currentUser, userRole]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setMintFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-  };
-
-  const handleShowMintForm = () => {
-    setShowMintForm(true); // Set showMintForm to true to display the minting form
-  };
-
-  const saveBadgeToFirestore = async (badgeData) => {
-    try {
-      const badgesRef = collection(db, 'nft_badges');
-      const docRef = await addDoc(badgesRef, {
-        ...badgeData,
-        contractAddress,
-        propertyIdentifier, // Use the generated identifier
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      return docRef.id;
-    } catch (error) {
-      console.error("Error saving to Firestore:", error);
-      throw error;
-    }
-  };
+  // ─── Mint NFT ──────────────────────────────────────────────────────────────
   const mintNFT = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
 
     if (!window.ethereum) {
-      setError("Ethereum provider not found. Please install MetaMask.");
+      setError('Ethereum provider not found. Please install MetaMask.');
+      return;
+    }
+
+    if (!propertyId) {
+      setError('Property ID is missing. Cannot mint NFT.');
       return;
     }
 
     try {
-      setMinting(true); // Show minting status
+      setMinting(true);
       setError(null);
 
       await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -249,131 +209,113 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
       const signer = await provider.getSigner();
       const userAddress = await signer.getAddress();
 
-      // DEBUG: confirm what we're minting with
       console.log('=== MINT DEBUG ===');
-      console.log('contractAddress from prop:', contractAddress);
+      console.log('propertyId:', propertyId);
+      console.log('contractAddress:', contractAddress);
       console.log('userAddress (signer):', userAddress);
 
       // Verify contract address
-      if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
-        throw new Error("Invalid contract address");
+      if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+        throw new Error('Invalid contract address');
       }
 
       const contract = new Contract(contractAddress, NFT_ABI, signer);
 
-      // Check network
-      const network = await provider.getNetwork();
-
-      // Generate QR code for the transaction
+      // Generate placeholder QR code (final one uses tx hash)
       const qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/`);
 
-      // Call issueBadge matching the actual contract signature
+      // Call issueBadge — matches the actual RealEstateNFT.sol signature
       console.log('Sending issueBadge to contract:', contractAddress);
       const mintPromise = contract.issueBadge(
         userAddress,
         propertyTitle || 'MetaHive Property',
-        propertyDetails?.location || 'Unknown Location',
+        propertyDetails?.location || propertyDetails?.address || 'Unknown Location',
         qrCodeUrl,
-        {
-          gasLimit: 500000
-        }
+        { gasLimit: 500000 }
       );
 
-      // Set a 2-minute timeout
+      // 2-minute timeout
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Transaction timed out. Check MetaMask.")), 120000)
+        setTimeout(() => reject(new Error('Transaction timed out. Check MetaMask.')), 120000)
       );
 
       const tx = await Promise.race([mintPromise, timeoutPromise]);
+      const receipt = await tx.wait();
 
-      const receipt = await tx.wait(); // Wait for confirmation
-
-      // Extract the real tokenId from the transaction receipt logs
-      let actualTokenId = "0";
+      // Extract the real on-chain tokenId from BadgeIssued event logs
+      let actualTokenId = '0';
       for (const log of receipt.logs) {
         try {
           const parsedLog = contract.interface.parseLog({ topics: [...log.topics], data: log.data });
           if (parsedLog && parsedLog.name === 'BadgeIssued') {
             actualTokenId = parsedLog.args[0].toString();
           }
-        } catch (e) {
-          // ignore parsing errors for other events
-        }
+        } catch (_) { /* ignore other events */ }
       }
 
-      // Generate a distinct UID for this property instead of relying on the sequence
+      // Human-readable formatted token ID
       const shortUid = uuidv4().split('-')[0].toUpperCase();
       const formattedTokenId = `MH-26-${shortUid}`;
 
-      // Generate final QR code with transaction hash
+      // Final QR code with real tx hash
       const finalQrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${tx.hash}`);
 
-      // Save badge data to Firestore
-      const badgeDataToSave = {
+      // ── 1. Save badge record to MongoDB via API ──────────────────────────
+      await apiCreateBadge({
+        propertyId,
+        contractAddress,
         buildingName: propertyTitle,
-        location: propertyDetails?.location,
+        location: propertyDetails?.location || propertyDetails?.address || 'Unknown Location',
         qrCodeUrl: finalQrCodeUrl,
         mintedBy: userAddress,
-        mintedAt: new Date(),
+        mintedAt: new Date().toISOString(),
         transactionHash: tx.hash,
         tokenId: formattedTokenId,
         realTokenId: Number(actualTokenId)
-      };
+      });
 
-      await saveBadgeToFirestore(badgeDataToSave);
+      // ── apiCreateBadge (POST /api/badges) already handles:
+      //    • saving the badge record
+      //    • updating NftMinted = 'Yes' and nftData on the property
+      // So NO separate apiUpdateProperty call is needed here.
 
-      // Update property in Firestore to mark as minted
-      if (propertyDetails) {
-        const propertiesCollection = collection(db, 'properties');
-        const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle));
-        const querySnapshot = await getDocs(propertyQuery);
+      // ── 3. Update local UI state immediately ─────────────────────────────
+      setBadgeData({
+        tokenId: formattedTokenId,
+        mintedBy: userAddress,
+        mintedAt: new Date(),
+        transactionHash: tx.hash,
+        qrCodeUrl: finalQrCodeUrl,
+        realTokenId: Number(actualTokenId)
+      });
 
-        if (!querySnapshot.empty) {
-          const propertyDoc = querySnapshot.docs[0];
-          const nftData = {
-            qrCodeUrl: finalQrCodeUrl,
-            transactionHash: tx.hash,
-            mintedBy: userAddress,
-            mintedAt: new Date(),
-            tokenId: formattedTokenId,
-            realTokenId: Number(actualTokenId),
-            contractAddress: contractAddress
-          };
-
-          await updateDoc(doc(db, 'properties', propertyDoc.id), {
-            NftMinted: "Yes",
-            nftData: nftData
-          });
-
-          // Update local state to show badge immediately without needing to reload
-          setBadgeData(nftData);
-
-        }
-      }
-
-      // Update UI
       setShowMintForm(false);
 
+      // ── 4. Notify parent so Pay Now button enables instantly ──────────────
+      if (typeof onMinted === 'function') {
+        onMinted();
+      }
+
     } catch (error) {
-      console.error("Error minting NFT:", error);
-      setError("Error minting NFT: " + (error.message || error));
+      console.error('Error minting NFT:', error);
+      setError('Error minting NFT: ' + (error.message || error));
     } finally {
       setMinting(false);
     }
   };
 
+  const handleShowMintForm = () => setShowMintForm(true);
 
-  // fetchPropertyData is handled by the useEffect above that queries by propertyTitle
-
-  // Add function to check if user can mint
   const canUserMint = () => {
-    return userRole?.toLowerCase() === 'builder';
+    const isOwner = currentUser?.uid === propertyDetails?.builderId;
+    const isBuilderRole = userRole?.toLowerCase() === 'builder';
+    return isBuilderRole && isOwner;
   };
 
   return (
     <div className={`building-badge ${isSold ? 'sold-out' : ''}`}>
       {/* Show badge if NFT is minted and we have badge data, otherwise show mint button */}
-      {(nftMinted === "Yes" || badgeData) ? (
+      {(nftMinted === 'Yes' || badgeData) ? (
         <div className="nft-badge">
           <h3>Property NFT Badge</h3>
           <div className="badge-content">
@@ -394,33 +336,32 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
                       onError={() => setQrCodeLoading(false)}
                     />
                   )}
-
                 </div>
               )}
             </div>
             <div className="badge-details">
               <p><strong>Property:</strong> {propertyTitle}</p>
-              <p><strong>Location:</strong> {propertyDetails?.location}</p>
+              <p><strong>Location:</strong> {propertyDetails?.location || propertyDetails?.address}</p>
               <p><strong>Token ID:</strong> {badgeData?.tokenId || 'N/A'}</p>
               {badgeData?.mintedBy && (
                 <p>
-                  <strong>Current Owner:</strong>
+                  <strong>Current Owner:</strong>{' '}
                   {badgeData.mintedBy === 'No Minter Address' ? 'N/A' :
                     `${badgeData.mintedBy.substring(0, 8)}...${badgeData.mintedBy.substring(badgeData.mintedBy.length - 6)}`
                   }
                 </p>
               )}
               <p>
-                <strong>Last Updated:</strong>
-                {badgeData?.mintedAt ?
-                  (typeof badgeData.mintedAt === 'object' && 'seconds' in badgeData.mintedAt) ?
-                    new Date(badgeData.mintedAt.seconds * 1000).toLocaleDateString() :
-                    new Date(badgeData.mintedAt).toLocaleDateString()
+                <strong>Last Updated:</strong>{' '}
+                {badgeData?.mintedAt
+                  ? (typeof badgeData.mintedAt === 'object' && 'seconds' in badgeData.mintedAt)
+                    ? new Date(badgeData.mintedAt.seconds * 1000).toLocaleDateString()
+                    : new Date(badgeData.mintedAt).toLocaleDateString()
                   : 'N/A'}
               </p>
               {badgeData?.transactionHash && badgeData.transactionHash !== 'No Transaction Hash' && (
                 <p>
-                  <strong>Transaction:</strong>
+                  <strong>Transaction:</strong>{' '}
                   <a
                     href={`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`}
                     target="_blank"
@@ -434,7 +375,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
           </div>
         </div>
       ) : (
-        /* Show mint interface only if NFT is not minted, not sold out, AND user is a builder */
+        /* Show mint interface only if not sold AND user is a builder */
         !isSold && canUserMint() && (
           <>
             {!showMintForm ? (
@@ -450,11 +391,11 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
             ) : (
               <div className="mint-form-container">
                 <form onSubmit={mintNFT} className="mint-form">
-                  <h3>Mint New Building Badge </h3>
+                  <h3>Mint New Building Badge</h3>
 
                   <div style={{ flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Building Name: {propertyTitle}</label>
-                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.location}</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.location || propertyDetails?.address}</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Area: {propertyDetails?.area} SqFt</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bedrooms: {propertyDetails?.bedrooms}</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bathrooms: {propertyDetails?.bathrooms}</label>
@@ -469,31 +410,19 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
                   </div>
 
                   <div className="form-buttons">
-                    <button
-                      type="submit"
-                      className="mint-button"
-                      disabled={minting}
-                    >
-                      {minting ? 'Minting...' : 'Mint Badge '}
+                    <button type="submit" className="mint-button" disabled={minting}>
+                      {minting ? 'Minting...' : 'Mint Badge'}
                     </button>
                     <button
                       type="button"
                       className="cancel-button"
-                      onClick={() => {
-                        setShowMintForm(false);
-                        setMinting(false);
-                        setError(null);
-                      }}
+                      onClick={() => { setShowMintForm(false); setMinting(false); setError(null); }}
                     >
                       Cancel
                     </button>
                   </div>
 
-                  {error && (
-                    <div className="error-message">
-                      {error}
-                    </div>
-                  )}
+                  {error && <div className="error-message">{error}</div>}
                 </form>
               </div>
             )}
@@ -501,7 +430,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
         )
       )}
 
-      {/* Show message if user is not authorized to mint */}
+      {/* Message if user is not authorized to mint */}
       {!isSold && !nftMinted && !canUserMint() && (
         <div className="unauthorized-message">
           <p>Only builders can mint NFTs for properties.</p>
@@ -512,7 +441,6 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
         <div className="sold-out-section">
           <div className="sold-out-badge">
             <i className="fas fa-check-circle"></i>
-
           </div>
         </div>
       )}
@@ -520,4 +448,4 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
   );
 }
 
-export default BuildingBadge; 
+export default BuildingBadge;

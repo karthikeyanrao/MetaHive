@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from './context/firebase';
+import { apiGetUserProfile } from './api';
 import './login.css';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import ThreeBackground from './ThreeBackground';
@@ -13,7 +15,6 @@ function Login() {
     const [error, setError] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
-    const auth = getAuth();
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -35,17 +36,29 @@ function Login() {
                 formData.email,
                 formData.password
             );
-            // Successfully logged in, navigate to home page
-            navigate('/');
+
+            // Fast verify MongoDB existence
+            try {
+                await apiGetUserProfile();
+                // Successfully logged in and verified in DB
+                navigate('/');
+            } catch (apiError) {
+                // Firebase auth worked, but MongoDB has no record of this user.
+                await signOut(auth);
+                setError('Registration incomplete! Please register your profile below.');
+                console.error('Login error (API sync):', apiError);
+                return;
+            }
+
         } catch (err) {
-            setError('Invalid email or password');
+            setError(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? 'Invalid email or password' : 'Login Failed.');
             console.error('Login error:', err);
         }
     };
 
     return (
         <div>
-            <ThreeBackground/>
+            <ThreeBackground />
             <div className="wrapper">
                 <div className="form-wrapper sign-in">
                     <form onSubmit={handleSubmit}>
@@ -70,7 +83,7 @@ function Login() {
                                 required
                             />
                             <label>Password</label>
-                            <span 
+                            <span
                                 className="password-toggle"
                                 onClick={togglePasswordVisibility}
                             >
@@ -82,9 +95,9 @@ function Login() {
                         </div>
                         <button type="submit" className="btn">Login</button>
                         <div className="sign-link">
-                            <p>Don't have an account? 
+                            <p>Don't have an account?
                                 <div className="register-dropdown">
-                                    <button className="register-button">
+                                    <button className="register-button" type="button">
                                         Register
                                         <div className="dropdown-menu">
                                             <Link to="/register/builder" className="dropdown-item">Builder</Link>

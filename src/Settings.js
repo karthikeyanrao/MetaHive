@@ -3,16 +3,15 @@ import { useAuth } from './context/AuthContext';
 import { useWeb3 } from './context/Web3Context';
 import { ethers } from 'ethers';
 import { useNavigate, Link } from 'react-router-dom';
-import { db } from './context/firebase';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
+import { apiUpdateUserProfile, apiGetBuilderProperties, apiGetMyPurchases } from './api';
 import './Settings.css';
 import ThreeBackground from './ThreeBackground';
 
 
 
 function Settings() {
-  const { currentUser, logout, userRole } = useAuth();
+  const { currentUser, dbUser, logout, userRole } = useAuth();
   const { isConnected, account } = useWeb3();
   const navigate = useNavigate();
   const [walletBalance, setWalletBalance] = useState(null);
@@ -33,40 +32,23 @@ function Settings() {
     isBuilder: isBuilder
   });
 
-  // Fetch user data including builder status from Firestore
+  // Map DB data into Settings format once loaded
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (currentUser?.uid) {
-        try {
-          const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            const builderStatus = userData.isBuilder || false;
-            setIsBuilder(builderStatus);
-            localStorage.setItem('isBuilder', builderStatus);
+    if (dbUser && currentUser) {
+      const builderStatus = dbUser.userType === 'builder' || dbUser.role === 'Builder' || false;
+      setIsBuilder(builderStatus);
+      localStorage.setItem('isBuilder', builderStatus);
 
-            setProfileData(prev => ({
-              ...prev,
-              name: userData.name || currentUser.displayName || 'User',
-              email: currentUser.email || 'No email provided',
-              avatar: userData.avatar || currentUser.photoURL || '',
-              isBuilder: builderStatus
-            }));
-            setUserData(userData);
-
-          } else {
-            console.log("User document does not exist.");
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      }
-    };
-
-    fetchUserData();
-  }, [currentUser]);
-
-
+      setProfileData(prev => ({
+        ...prev,
+        name: dbUser.fullName || dbUser.name || currentUser.displayName || 'User',
+        email: currentUser.email || 'No email provided',
+        avatar: dbUser.profileImage || dbUser.avatar || currentUser.photoURL || '',
+        isBuilder: builderStatus
+      }));
+      setUserData(dbUser);
+    }
+  }, [dbUser, currentUser]);
 
   // Fetch property statistics
   useEffect(() => {
@@ -77,19 +59,13 @@ function Settings() {
 
   const fetchPropertyStats = async () => {
     try {
-      if (userRole === 'Builder') {
-        // Fetch properties listed by this builder
-        const q = query(
-          collection(db, 'properties'),
-          where('builderId', '==', currentUser.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        const properties = querySnapshot.docs.map(doc => doc.data());
+      if (userRole === 'Builder' || userRole === 'builder') {
+        const properties = await apiGetBuilderProperties();
 
         const listed = properties.length;
-        const sold = properties.filter(p => p.isSold === 'Sold').length;
+        const sold = properties.filter(p => p.status === 'sold').length;
         const totalRevenue = properties
-          .filter(p => p.isSold === 'Sold')
+          .filter(p => p.status === 'sold')
           .reduce((total, p) => total + (p.price || 0), 0);
 
         setPropertyStats({
@@ -99,17 +75,12 @@ function Settings() {
           totalRevenue,
           totalSpent: 0
         });
-      } else if (userRole === 'Buyer') {
-        // Fetch properties purchased by this buyer
-        const q = query(
-          collection(db, 'properties'),
-          where('buyerId', '==', currentUser.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        const purchasedProperties = querySnapshot.docs.map(doc => doc.data());
+      } else if (userRole === 'Buyer' || userRole === 'buyer') {
+        const purchases = await apiGetMyPurchases();
 
-        const purchased = purchasedProperties.length;
-        const totalSpent = purchasedProperties.reduce((total, p) => total + (p.price || 0), 0);
+        const purchased = purchases.length;
+        // purchases model has 'amount' field
+        const totalSpent = purchases.reduce((total, p) => total + (p.amount || p.propertyId?.price || 0), 0);
 
         setPropertyStats({
           listed: 0,
@@ -147,28 +118,12 @@ function Settings() {
 
     if (currentUser?.uid) {
       try {
-        const userRef = doc(db, 'users', currentUser.uid);
-
-        // Check if the document exists
-        const docSnap = await getDoc(userRef);
-
-        if (docSnap.exists()) {
-          await updateDoc(userRef, {
-            isBuilder: isBuilder,
-            name: profileData.name,
-            email: profileData.email,
-            updatedAt: new Date().toISOString()
-          });
-        } else {
-          await setDoc(userRef, {
-            isBuilder: isBuilder,
-            name: profileData.name,
-            email: profileData.email,
-            avatar: profileData.avatar,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
+        await apiUpdateUserProfile({
+          isBuilder: isBuilder,
+          name: profileData.name,
+          email: profileData.email,
+          avatar: profileData.avatar
+        });
 
         localStorage.setItem('isBuilder', isBuilder);
         alert('Settings saved successfully!');
@@ -205,7 +160,7 @@ function Settings() {
         <div className="profile-header">
 
           <div className="profile-info">
-            <h1>{userData?.name || currentUser?.displayName || 'User'}</h1>
+            <h1>{userData?.fullName || userData?.name || currentUser?.displayName || 'User'}</h1>
             <p className="user-role">{userRole || 'User'}</p>
             <p className="user-email">{currentUser?.email}</p>
           </div>
@@ -213,7 +168,7 @@ function Settings() {
 
         {/* Profile Actions */}
         <div className="profile-actions">
-          {userRole === 'Builder' && (
+          {(userRole === 'Builder' || userRole === 'builder') && (
             <>
               <Link to="/add-property" className="action-button primary">
                 Add Property
@@ -224,7 +179,7 @@ function Settings() {
             </>
           )}
 
-          {userRole === 'Buyer' && (
+          {(userRole === 'Buyer' || userRole === 'buyer') && (
             <>
               <Link to="/my-purchases" className="action-button secondary">
                 My Purchases
@@ -235,7 +190,7 @@ function Settings() {
 
         {/* Profile Stats */}
         <div className="profile-stats">
-          {userRole === 'Builder' && (
+          {(userRole === 'Builder' || userRole === 'builder') && (
             <div className="stats-grid">
               <div className="stat-card">
                 <h3>Properties Listed</h3>
@@ -252,7 +207,7 @@ function Settings() {
             </div>
           )}
 
-          {userRole === 'Buyer' && (
+          {(userRole === 'Buyer' || userRole === 'buyer') && (
             <div className="stats-grid">
               <div className="stat-card">
                 <h3>Properties Purchased</h3>
@@ -276,7 +231,7 @@ function Settings() {
           <div className="details-grid">
             <div className="detail-item">
               <label>Full Name:</label>
-              <span>{userData?.name || 'Not provided'}</span>
+              <span>{userData?.fullName || userData?.name || 'Not provided'}</span>
             </div>
             <div className="detail-item">
               <label>Email:</label>
@@ -290,11 +245,11 @@ function Settings() {
               <label>Address:</label>
               <span>{userData?.address || 'Not provided'}</span>
             </div>
-            {userRole === 'Builder' && (
+            {(userRole === 'Builder' || userRole === 'builder') && (
               <>
                 <div className="detail-item">
                   <label>Company:</label>
-                  <span>{userData?.company || 'Not provided'}</span>
+                  <span>{userData?.companyName || userData?.company || 'Not provided'}</span>
                 </div>
                 <div className="detail-item">
                   <label>License Number:</label>
@@ -302,7 +257,7 @@ function Settings() {
                 </div>
               </>
             )}
-            {userRole === 'Buyer' && (
+            {(userRole === 'Buyer' || userRole === 'buyer') && (
               <>
                 <div className="detail-item">
                   <label>Annual Income:</label>
@@ -316,7 +271,7 @@ function Settings() {
             )}
             <div className="detail-item">
               <label>Registration Date:</label>
-              <span>{userData?.registrationDate ? new Date(userData.registrationDate).toLocaleDateString() : 'Not available'}</span>
+              <span>{userData?.registrationDate ? new Date(userData.registrationDate).toLocaleDateString() : (userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'Not available')}</span>
             </div>
           </div>
         </div>

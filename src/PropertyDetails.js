@@ -8,17 +8,16 @@ import { useWeb3 } from './context/Web3Context';
 import { useAuth } from './context/AuthContext';
 import { SENDER_ADDRESS, SENDER_ABI } from './contracts/SenderContract';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from "./context/firebase"; // Ensure db is properly exported
-import { doc, deleteDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { apiGetPropertyById, apiGetUserById, apiDeleteProperty, apiCreatePurchase } from './api';
 import BuildingBadge from './BuildingBadge';
 import PropertyReceipt from './receipt';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import b1 from './b1.jpg';
 import b2 from './b2.jpg';
 import be1 from './be1.jpg';
 import k1 from './k1.jpg';
-
 
 
 function PropertyDetails() {
@@ -27,21 +26,20 @@ function PropertyDetails() {
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(null);
   const { isConnected, account } = useWeb3();
-  const { currentUser } = useAuth();
+  const { currentUser, userRole } = useAuth();
   const [paymentStatus, setPaymentStatus] = useState('');
   const [isSold, setIsSold] = useState(() => {
     return localStorage.getItem(`property_${id}_sold`) === 'true'
   });
   const [property, setProperty] = useState({});
-  // Issue #3: NFT contract address from env var
+  const [nftMinted, setNftMinted] = useState('No');
   const NFT_CONTRACT_ADDRESS = process.env.REACT_APP_NFT_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState('');
+  // userRole now comes from useAuth() — remove local state
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [showSchedulingModal, setShowSchedulingModal] = useState(false);
-  const [paymentEthAmount, setPaymentEthAmount] = useState(null);
   const [builderInfo, setBuilderInfo] = useState({
     name: 'Loading...',
     email: 'Loading...',
@@ -55,11 +53,10 @@ function PropertyDetails() {
   const fetchBuilderInfo = async () => {
     try {
       if (property.builderId) {
-        const userDoc = await getDoc(doc(db, 'Users', property.builderId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
+        const userData = await apiGetUserById(property.builderId);
+        if (userData) {
           setBuilderInfo({
-            name: userData.name || 'Not available',
+            name: userData.fullName || userData.name || 'Not available',
             email: userData.email || 'Not available',
             phone: userData.phone || 'Not available'
           });
@@ -75,64 +72,24 @@ function PropertyDetails() {
     }
   };
 
-  // Fetch live ETH/USD price from CoinGecko
-  const fetchEthPrice = async () => {
-    try {
-      const res = await fetch(
-        'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
-      );
-      const data = await res.json();
-      return data?.ethereum?.usd || null;
-    } catch (err) {
-      console.error('Failed to fetch ETH price:', err);
-      return null;
-    }
-  };
-
   const handleScheduleViewing = () => {
     fetchBuilderInfo();
     setShowSchedulingModal(true);
   };
 
-  const handleDelete = async () => {
-
-    if (!currentUser) {
-      toast.error('You must be logged in to delete a property.');
-      return;
-    }
-    if (property.builderId !== currentUser.uid) {
-      toast.error('You are not authorized to delete this property. Only the listing builder can delete it.');
-      return;
-    }
-    if (window.confirm('Are you sure you want to delete this property?')) {
-      try {
-        const propertiesCollection = collection(db, 'properties');
-        const q = query(propertiesCollection, where('id', '==', id));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          const propertyDoc = querySnapshot.docs[0].ref;
-          await deleteDoc(propertyDoc);
-          toast.success('Property deleted successfully!');
-          navigate('/properties');
-          window.scrollTo(0, 0);
-        } else {
-          toast.warning('Property not found.');
-        }
-      } catch (error) {
-        toast.error('Failed to delete property. Please try again.');
-        console.error('Delete error', error);
-      }
-    }
-  };
 
 
-  const images = [
-    { id: 1, url: be1, alt: "Living Room" },
-    { id: 2, url: k1, alt: "Kitchen" },
-    { id: 3, url: b1, alt: "Master Bedroom" },
-    { id: 4, url: b2, alt: "Bathroom" },
+  // Build gallery images - use real IPFS images from DB, fallback to static defaults
+  const fallbackImages = [
+    { id: 1, url: be1, alt: 'Living Room' },
+    { id: 2, url: k1, alt: 'Kitchen' },
+    { id: 3, url: b1, alt: 'Master Bedroom' },
+    { id: 4, url: b2, alt: 'Bathroom' },
   ];
+
+  const images = (property.images && property.images.length > 0)
+    ? property.images.slice(0, 5).map((url, i) => ({ id: i + 1, url, alt: `Property Image ${i + 1}` }))
+    : fallbackImages;
 
   const features = {
     basics: [
@@ -156,192 +113,121 @@ function PropertyDetails() {
     ],
   };
 
-  const amenities = [
-    "Smart Home System",
-    "24/7 Security",
-    "Fitness Center",
-    "Rooftop Garden",
-    "Wine Cellar",
-    "Home Theater",
-  ];
+  // Property amenities from database (real data)
+  const propertyAmenities = property.amenities || [];
 
   const handlePayment = async () => {
     try {
-      if (property?.nftMinted !== 'Yes') {
+      if (nftMinted !== 'Yes') {
         setPaymentStatus('NFT not minted. Payment disabled.');
         return;
       }
 
       if (!isConnected) {
-        toast.warning('Please connect your wallet first');
+        alert('Please connect your wallet first');
         return;
       }
 
       if (!currentUser) {
-        toast.warning('Please login to make a purchase');
-        setPaymentStatus('');
-        return;
-      }
-
-      // Fetch live ETH/USD price and compute property cost in ETH
-      setPaymentStatus('Fetching live ETH price...');
-      const ethPriceUsd = await fetchEthPrice();
-      if (!ethPriceUsd) {
-        toast.error('Could not fetch live ETH price. Please try again.');
-        setPaymentStatus('');
-        return;
-      }
-
-      const propertyPriceUsd = Number(property.amount);
-      if (!propertyPriceUsd || propertyPriceUsd <= 0) {
-        toast.error('Invalid property price.');
-        setPaymentStatus('');
-        return;
-      }
-
-      const ethAmount = (propertyPriceUsd / ethPriceUsd).toFixed(8);
-      setPaymentEthAmount(ethAmount);
-
-      const confirmed = window.confirm(
-        `Property price: $${propertyPriceUsd.toLocaleString()} USD\n` +
-        `Live ETH price: $${ethPriceUsd.toLocaleString()} USD\n` +
-        `Amount to pay: ${ethAmount} ETH\n\nProceed with payment?`
-      );
-      if (!confirmed) {
+        alert('Please login to make a purchase');
         setPaymentStatus('');
         return;
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const buyerAddress = await signer.getAddress();
 
-      // DEBUG: Log what nftData we have
-      console.log('=== PURCHASE DEBUG ===');
-      console.log('property.nftData:', JSON.stringify(property.nftData));
-      console.log('NFT_CONTRACT_ADDRESS:', NFT_CONTRACT_ADDRESS);
-
-      // The builder's on-chain wallet is whoever minted the NFT (stored in nftData.mintedBy)
-      const builderWallet = property.nftData?.mintedBy;
-      console.log('builderWallet:', builderWallet);
-      if (!builderWallet) {
-        toast.error('Cannot determine property owner wallet. The NFT must be minted first.');
-        console.error('FAILED: builderWallet is falsy. property.nftData =', property.nftData);
-        setPaymentStatus('');
-        return;
-      }
-
-      // The real blockchain token ID (integer) stored when builder minted
+      // Ensure NFT data is complete
       const realTokenId = property.nftData?.realTokenId;
-      console.log('realTokenId:', realTokenId);
-      if (realTokenId === undefined || realTokenId === null) {
-        toast.error('Cannot determine NFT Token ID. Please ask the builder to re-mint.');
-        console.error('FAILED: realTokenId is missing. property.nftData =', property.nftData);
+      const builderWallet = property.nftData?.mintedBy;
+
+      if (realTokenId === undefined || !builderWallet) {
+        alert("NFT data is incomplete or has not been fully verified on the blockchain. Cannot process payment.");
         setPaymentStatus('');
         return;
       }
 
-      const amountToSend = ethers.parseEther(ethAmount);
-      setPaymentStatus(`Executing Secure Smart Contract Payment of ${ethAmount} ETH...`);
-
-      console.log('Calling buyProperty with:', { realTokenId, builderWallet, amountToSend: amountToSend.toString() });
-      toast.info(`Calling buyProperty: Token #${realTokenId}, Owner: ${builderWallet.substring(0, 10)}...`);
-
-      // Atomic trade: sends ETH to Builder + transfers NFT to Buyer in one transaction
+      // ABI matching RealEstateNFT.buyProperty
       const NFT_ABI = [
-        "function buyProperty(uint256 tokenId, address currentOwner) public payable"
+        "function buyProperty(uint256 tokenId, address payable currentOwner) public payable"
       ];
-      const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, signer);
+      const nftContract = new ethers.Contract(
+        NFT_CONTRACT_ADDRESS,
+        NFT_ABI,
+        signer
+      );
 
+      const amountToSend = ethers.parseEther("0.00005");
+      setPaymentStatus('Processing payment...');
+
+      console.log(`Calling buyProperty with: {realTokenId: ${realTokenId}, builderWallet: "${builderWallet}"}`);
       const tx = await nftContract.buyProperty(
         realTokenId,
         builderWallet,
-        { value: amountToSend }
+        { gasLimit: 500000, value: amountToSend }
       );
+      await tx.wait();
 
-      console.log('buyProperty tx submitted:', tx.hash);
-      setPaymentStatus(`Payment submitted! Waiting for Ethereum block confirmation...`);
-      const receipt = await tx.wait();
-      console.log('buyProperty tx confirmed! Block:', receipt.blockNumber);
-      toast.success('NFT transferred successfully from Builder to Buyer!');
+      console.log('buyProperty tx confirmed!');
+      toast.success('NFT transferred successfully from Builder to Buyer!', { theme: 'colored' });
 
-      // Update Firebase status
-      const propertiesCollection = collection(db, 'properties');
-      const q = query(propertiesCollection, where('id', '==', id));
-      const querySnapshot = await getDocs(q);
+      // Get the buyer's on-chain wallet address
+      const buyerWallet = await signer.getAddress();
 
-      if (!querySnapshot.empty) {
-        const propertyDoc = querySnapshot.docs[0].ref;
-        await updateDoc(propertyDoc, {
-          isSold: 'Sold',
-          buyerId: currentUser.uid,
-          buyerName: currentUser?.displayName || 'Anonymous',
-          buyerAddress: buyerAddress,
-          soldAt: new Date().toISOString(),
-          nftData: {
-            ...property.nftData,
-            mintedBy: buyerAddress, // New on-chain owner is the Buyer
-            previousOwner: builderWallet,
-            transactionHash: tx.hash,
-            purchaseDate: new Date().toISOString(),
-            qrCodeUrl: "" // Forces the QR component to regenerate matching the new tx
-          },
-          // Ownership log: every transfer is permanently recorded
-          ownershipLog: [
-            ...(property.ownershipLog || []),
-            {
-              from: builderWallet,
-              to: buyerAddress,
-              transactionHash: tx.hash,
-              tokenId: realTokenId,
-              date: new Date().toISOString(),
-              amountEth: ethAmount,
-              amountUsd: property.amount
-            }
-          ]
-        });
-        setIsSold(true);
+      // Create a purchase record via API
+      // Backend will: create Purchase doc + mark property 'sold' + transfer NFT ownership to buyer
+      await apiCreatePurchase({
+        propertyId: id,
+        builderId: property.builderId,
+        amount: property.amount,
+        transactionHash: tx.hash,
+        buyerAddress: buyerWallet,                               // on-chain MetaMask address
+        buyerName: currentUser?.displayName || 'Anonymous'   // display name
+      });
 
-        // Generate receipt data after successful payment
-        const receiptInfo = {
-          builderName: property.builderName || 'Not available',
-          builderEmail: property.builderEmail || 'Not available',
-          builderId: property.builderId,
-          buyerName: currentUser?.displayName || 'Anonymous',
-          buyerAddress: account,
-          propertyDetails: {
-            title: property.title || 'N/A',
-            location: property.location || 'N/A',
-            area: property.area || 'N/A',
-            price: property.amount || 'N/A',
-            bedrooms: property.bedrooms || 'N/A',
-            bathrooms: property.bathrooms || 'N/A',
-            furnishedStatus: property.furnished || 'N/A',
-            nftMinted: property.nftMinted || 'No',
-            buildingDescription: property.buildingDescription || 'N/A',
-            latitude: property.latitude || 'N/A',
-            longitude: property.longitude || 'N/A'
-          },
-          amountPaidUsd: property.amount,
-          amountPaidEth: ethAmount,
-          transactionHash: tx.hash,
-          contractAddress: NFT_CONTRACT_ADDRESS,
-          senderAddress: buyerAddress,
-          receiverAddress: builderWallet
-        };
 
-        setReceiptData(receiptInfo);
-        setShowReceipt(true);
-        setPaymentStatus('');
-      }
+      setIsSold(true);
+
+      // Generate receipt data after successful payment
+      const receiptInfo = {
+        builderName: property.builderName || 'Not available',
+        builderEmail: property.builderEmail || 'Not available',
+        builderId: property.builderId,
+        buyerName: currentUser?.displayName || 'Anonymous',
+        buyerAddress: account,
+        propertyDetails: {
+          title: property.title || 'N/A',
+          location: property.location || 'N/A',
+          area: property.area || 'N/A',
+          price: property.amount || 'N/A',
+          bedrooms: property.bedrooms || 'N/A',
+          bathrooms: property.bathrooms || 'N/A',
+          furnishedStatus: property.furnished || 'N/A',
+          nftMinted: property.nftMinted || 'No',
+          buildingDescription: property.buildingDescription || 'N/A',
+          latitude: property.latitude || 'N/A',
+          longitude: property.longitude || 'N/A'
+        },
+        amountPaid: property.amount,
+        transactionHash: tx.hash,
+        contractAddress: NFT_CONTRACT_ADDRESS,
+        senderAddress: account,
+        receiverAddress: builderWallet
+
+      };
+
+      setReceiptData(receiptInfo);
+      setShowReceipt(true);
+      setPaymentStatus('');
     } catch (error) {
+      console.error('Payment error:', error);
       setPaymentStatus('');
       if (error.code === 'ACTION_REJECTED') {
-        toast.warning('Transaction was rejected by user');
+        alert('Transaction was rejected by user');
       } else if (error.code === 'INSUFFICIENT_FUNDS') {
-        toast.error('Insufficient funds to complete the transaction');
+        alert('Insufficient funds to complete the transaction');
       } else {
-        toast.error(`Payment failed: ${error.message || 'Please try again'}`);
+        alert(`Payment failed: ${error.message || 'Please try again'}`);
       }
     }
   };
@@ -357,43 +243,56 @@ function PropertyDetails() {
     const fetchPropertyDetails = async () => {
       setLoading(true);
       try {
-        const propertiesCollection = collection(db, 'properties');
-        const q = query(propertiesCollection, where('id', '==', id));
-        const querySnapshot = await getDocs(q);
+        const docData = await apiGetPropertyById(id);
 
-        if (!querySnapshot.empty) {
-          const propertyDetails = querySnapshot.docs[0].data(); // Get the first document's data
-
-          // Fetch the NftMinted status
-          const nftMintedStatus = propertyDetails.NftMinted; // Assuming NftMinted is a field in the property document
-
+        if (docData) {
+          const pDetails = docData.propertyDetails || {};
 
           setProperty({
-            title: propertyDetails.title,
-            location: propertyDetails.location,
-            amount: propertyDetails.price,
-            isSold: propertyDetails.isSold,
-            bedrooms: propertyDetails.bedrooms,
-            bathrooms: propertyDetails.bathrooms,
-            area: propertyDetails.area,
-            furnished: propertyDetails.furnishedStatus,
-            nftMinted: propertyDetails.NftMinted,
-            builderName: propertyDetails.builderName || 'Not available',
-            builderEmail: propertyDetails.builderEmail || 'Not available',
-            builderId: propertyDetails.builderId,
-            buildingDescription: propertyDetails.buildingDescription || '',
-            description: propertyDetails.description || '',
-            rawMaterials: propertyDetails.rawMaterials || '',
-            details: propertyDetails.details || '',
-            amenities: propertyDetails.amenities || {},
-            streetNumber: propertyDetails.streetNumber || '',
-            latitude: propertyDetails.lat || 'N/A',
-            longitude: propertyDetails.lng || 'N/A',
-            nftData: propertyDetails.nftData || null,
-            ownershipLog: propertyDetails.ownershipLog || []
+            title: pDetails.title || docData.title || 'Untitled',
+            location: pDetails.address || docData.location || docData.address || 'Unknown Location',
+            amount: pDetails.price || docData.price || 0,
+            isSold: (docData.status || '').toLowerCase() === 'sold' || (docData.isSold || '').toLowerCase() === 'yes' || (docData.isSold || '').toLowerCase() === 'sold' ? 'Sold' : 'New',
+            bedrooms: pDetails.bedrooms || docData.bedrooms || 0,
+            bathrooms: pDetails.bathrooms || docData.bathrooms || 0,
+            area: pDetails.area || docData.area || 0,
+            furnished: pDetails.furnishedStatus || docData.furnishedStatus || 'Non-Furnished',
+            nftMinted: pDetails.NftMinted || docData.NftMinted || 'No',
+            builderName: docData.builderName || docData.propertyDetails?.builderName || 'Not available',
+            builderEmail: docData.builderEmail || 'Not available',
+            builderId: docData.builderId,
+            buildingDescription: pDetails.buildingDescription || docData.buildingDescription || docData.description || 'No description',
+            description: pDetails.description || docData.description || '',
+            rawMaterials: pDetails.rawMaterials || docData.rawMaterials || '',
+            details: pDetails.details || docData.details || '',
+            latitude: pDetails.location?.lat || docData.lat || 'N/A',
+            longitude: pDetails.location?.lng || docData.lng || 'N/A',
+            nftData: docData.nftData || pDetails.nftData || {},
+            // Real images from IPFS — support both flat and nested schemas
+            images: (() => {
+              const raw = pDetails.images || docData.images || [];
+              if (Array.isArray(raw)) return raw.filter(Boolean);
+              if (typeof raw === 'string') return raw ? [raw] : [];
+              return [];
+            })(),
+            amenities: (() => {
+              const raw = pDetails.amenities || docData.amenities || [];
+              if (Array.isArray(raw)) return raw.filter(Boolean);
+              if (typeof raw === 'object' && !Array.isArray(raw)) {
+                return Object.entries(raw)
+                  .filter(([, val]) => val === true || val === 'true')
+                  .map(([key]) => key);
+              }
+              return [];
+            })()
           });
 
-          setIsSold(propertyDetails.isSold === 'Sold');
+          // NftMinted is a flat top-level field in the DB (not inside propertyDetails)
+          // Always read flat first, fall back to nested
+          const resolvedNftMinted = docData.NftMinted || pDetails.NftMinted || 'No';
+          console.log('[PropertyDetails] NftMinted flat:', docData.NftMinted, '| nested:', pDetails.NftMinted, '=> resolved:', resolvedNftMinted);
+          setNftMinted(resolvedNftMinted);
+          setIsSold((docData.status || '').toLowerCase() === 'sold' || (docData.isSold || '').toLowerCase() === 'yes' || (docData.isSold || '').toLowerCase() === 'sold');
         } else {
           alert('Property not found.');
         }
@@ -411,10 +310,8 @@ function PropertyDetails() {
     const fetchCurrentUserDetails = async () => {
       if (currentUser) {
         try {
-          const userRef = doc(db, 'Users', currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
+          const userData = await apiGetUserById(currentUser.uid);
+          if (userData) {
             setCurrentUserEmail(userData.email);
           }
         } catch (error) {
@@ -424,7 +321,7 @@ function PropertyDetails() {
     };
 
     fetchCurrentUserDetails();
-  }, [currentUser, property.builderEmail]);
+  }, [currentUser]);
 
 
   return (
@@ -482,7 +379,6 @@ function PropertyDetails() {
           <div className="property-description">
             <h2 className="description-title">About this property</h2>
             <div className="description-content">
-
               {property.description && <p>{property.description}</p>}
               {property.buildingDescription && (
                 <div className="highlights">
@@ -507,7 +403,6 @@ function PropertyDetails() {
                 <ul>
                   <li>{property.bedrooms} Bedrooms · {property.bathrooms} Bathrooms</li>
                   <li>{property.area} sq ft · {property.furnished || 'Status N/A'}</li>
-                  {property.streetNumber && <li>Street: {property.streetNumber}</li>}
                 </ul>
               </div>
             </div>
@@ -541,17 +436,15 @@ function PropertyDetails() {
             <div className="amenities-section">
               <h2 className="features-title">Amenities</h2>
               <div className="amenities-list">
-                {property.amenities && Object.entries(property.amenities)
-                  .filter(([, val]) => val)
-                  .map(([key]) => (
-                    <div key={key} className="amenity-item">
+                {propertyAmenities.length > 0 ? (
+                  propertyAmenities.map((amenity, index) => (
+                    <div key={index} className="amenity-item">
                       <i className="fas fa-check"></i>
-                      <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</span>
+                      <span>{amenity}</span>
                     </div>
                   ))
-                }
-                {(!property.amenities || Object.values(property.amenities).every(v => !v)) && (
-                  <p style={{ color: '#888' }}>No amenities listed for this property.</p>
+                ) : (
+                  <p style={{ opacity: 0.6, fontSize: '0.9rem' }}>No amenities listed</p>
                 )}
               </div>
             </div>
@@ -569,7 +462,7 @@ function PropertyDetails() {
             </div>
           </div>
           <div className="contact-buttons">
-
+            <ToastContainer position="top-right" autoClose={5000} />
             <button
               className="contact-button"
               onClick={toggleAgentPopup}
@@ -578,8 +471,6 @@ function PropertyDetails() {
             </button>
             {!isSold ? (
               <>
-
-
                 <button
                   className="schedule-button"
                   onClick={handleScheduleViewing}
@@ -587,26 +478,22 @@ function PropertyDetails() {
                   <i className="fas fa-calendar-alt"></i> Schedule Viewing
                 </button>
 
-                <button
-                  className={`pay-button`}
-                  onClick={handlePayment}
-                  disabled={!isConnected || property?.nftMinted !== 'Yes'}
-                  style={{ cursor: !isConnected || property?.nftMinted !== 'Yes' ? 'not-allowed' : 'pointer' }}
-                >
-                  <i className="fas fa-credit-card"></i>
-                  Pay Now
-                </button>
+                {/* Pay Now — only for buyers */}
+                {(userRole?.toLowerCase() === 'buyer') && (
+                  <button
+                    className="pay-button"
+                    onClick={handlePayment}
+                    disabled={!isConnected || nftMinted !== 'Yes'}
+                    title={nftMinted !== 'Yes' ? 'NFT must be minted before purchase' : !isConnected ? 'Connect your wallet' : ''}
+                    style={{ cursor: (!isConnected || nftMinted !== 'Yes') ? 'not-allowed' : 'pointer' }}
+                  >
+                    <i className="fas fa-credit-card"></i>
+                    {nftMinted !== 'Yes' ? 'Pay Now (NFT Not Minted)' : 'Pay Now'}
+                  </button>
+                )}
               </>
             ) : (
-              // Only show delete button if current user's email matches builder's email
-              (
-                <button
-                  className="delete-button"
-                  onClick={handleDelete}
-                >
-                  <i className="fas fa-trash"></i> Delete Property
-                </button>
-              )
+              <div className="sold-badge">🏠 Property Sold</div>
             )}
 
             {paymentStatus && (
@@ -635,10 +522,14 @@ function PropertyDetails() {
         <div className={`verification-section ${isSold ? 'sold-out' : ''}`}>
           <h2>Property Verification</h2>
           <BuildingBadge
+            key={`badge-${isSold}`}
             contractAddress={NFT_CONTRACT_ADDRESS}
+            tokenId={0}
             isSold={isSold}
             propertyTitle={property.title}
-            nftMinted={property.nftMinted}
+            nftMinted={nftMinted}
+            propertyId={id}
+            onMinted={() => setNftMinted('Yes')}
           />
         </div>
         <div>
