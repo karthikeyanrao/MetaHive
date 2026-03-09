@@ -90,11 +90,30 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
           // DB may be flat (top-level fields) or nested (under propertyDetails).
           // Merge both so fields like address, area, bedrooms are always available.
           const nested = docData.propertyDetails || {};
+
+          // Prefer human-readable postal address for display; avoid raw "lat,lng" strings
+          const resolvedAddress = nested.address || docData.address || '';
+          const rawLocation = nested.location || docData.location || '';
+          const resolvedDisplayLocation = (() => {
+            if (resolvedAddress) return resolvedAddress;
+            if (typeof rawLocation === 'string') {
+              const parts = rawLocation.split(',').map(p => p.trim());
+              const looksLikeCoords =
+                parts.length === 2 &&
+                !Number.isNaN(parseFloat(parts[0])) &&
+                !Number.isNaN(parseFloat(parts[1]));
+              return looksLikeCoords ? 'Unknown Location' : rawLocation;
+            }
+            return 'Unknown Location';
+          })();
+
           setPropertyDetails({
             ...nested,
-            // flat fields win if nested is empty
-            location: nested.location || docData.location || docData.address || '',
-            address: nested.address || docData.address || '',
+            // Keep raw location and address for backend/contract use
+            location: rawLocation || resolvedAddress || '',
+            address: resolvedAddress,
+            // Dedicated field for UI / badge display
+            displayLocation: resolvedDisplayLocation,
             area: nested.area || docData.area || '',
             bedrooms: nested.bedrooms || docData.bedrooms || '',
             bathrooms: nested.bathrooms || docData.bathrooms || '',
@@ -229,7 +248,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
       const mintPromise = contract.issueBadge(
         userAddress,
         propertyTitle || 'MetaHive Property',
-        propertyDetails?.location || propertyDetails?.address || 'Unknown Location',
+        propertyDetails?.displayLocation || propertyDetails?.address || propertyDetails?.location || 'Unknown Location',
         qrCodeUrl,
         { gasLimit: 500000 }
       );
@@ -265,7 +284,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
         propertyId,
         contractAddress,
         buildingName: propertyTitle,
-        location: propertyDetails?.location || propertyDetails?.address || 'Unknown Location',
+        location: propertyDetails?.displayLocation || propertyDetails?.address || propertyDetails?.location || 'Unknown Location',
         qrCodeUrl: finalQrCodeUrl,
         mintedBy: userAddress,
         mintedAt: new Date().toISOString(),
@@ -341,7 +360,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
             </div>
             <div className="badge-details">
               <p><strong>Property:</strong> {propertyTitle}</p>
-              <p><strong>Location:</strong> {propertyDetails?.location || propertyDetails?.address}</p>
+              <p><strong>Location:</strong> {propertyDetails?.displayLocation || propertyDetails?.address || propertyDetails?.location || 'Unknown Location'}</p>
               <p><strong>Token ID:</strong> {badgeData?.tokenId || 'N/A'}</p>
               {badgeData?.mintedBy && (
                 <p>
@@ -395,7 +414,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
 
                   <div style={{ flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Building Name: {propertyTitle}</label>
-                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.location || propertyDetails?.address}</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.displayLocation || propertyDetails?.address || propertyDetails?.location || 'Unknown Location'}</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Area: {propertyDetails?.area} SqFt</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bedrooms: {propertyDetails?.bedrooms}</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bathrooms: {propertyDetails?.bathrooms}</label>

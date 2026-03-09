@@ -35,12 +35,29 @@ function ListedProperties() {
           return [];
         })();
 
+        // Prefer human-readable address; avoid showing raw "lat,lng" strings
+        const resolvedLocation = (() => {
+          const address = doc.propertyDetails?.address || doc.address;
+          if (address) return address;
+
+          const loc = doc.location;
+          if (typeof loc === 'string') {
+            const parts = loc.split(',').map(p => p.trim());
+            const looksLikeCoords =
+              parts.length === 2 &&
+              !Number.isNaN(parseFloat(parts[0])) &&
+              !Number.isNaN(parseFloat(parts[1]));
+            return looksLikeCoords ? 'Unknown Location' : loc;
+          }
+          return 'Unknown Location';
+        })();
+
         return {
           id: doc._id,
           isSold: (doc.status || '').toLowerCase() === 'sold' || (doc.isSold || '').toLowerCase() === 'yes' || (doc.isSold || '').toLowerCase() === 'sold' ? 'Sold' : 'New',
           title: doc.propertyDetails?.title || doc.title || 'Untitled Property',
           price: doc.propertyDetails?.price || doc.price || 0,
-          location: doc.propertyDetails?.address || doc.location || doc.address || 'Unknown Location',
+          location: resolvedLocation,
           bedrooms: doc.propertyDetails?.bedrooms || doc.bedrooms || 0,
           bathrooms: doc.propertyDetails?.bathrooms || doc.bathrooms || 0,
           area: doc.propertyDetails?.area || doc.area || 0,

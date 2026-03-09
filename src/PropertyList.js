@@ -78,7 +78,8 @@ function PropertyList() {
         return {
           id: doc._id,
           title: pDetails.title || doc.title || 'Untitled Property',
-          location: pDetails.address || doc.location || doc.address || 'Unknown Location',
+          // Prefer human-readable address over raw coordinate string
+          location: pDetails.address || doc.address || doc.location || 'Unknown Location',
           price: pDetails.price || doc.price || 0,
           bedrooms: pDetails.bedrooms || doc.bedrooms || 0,
           bathrooms: pDetails.bathrooms || doc.bathrooms || 0,
@@ -236,7 +237,7 @@ function PropertyList() {
                   <div className="mini-map" style={{ marginTop: '10px' }}>
                     <div style={{ marginBottom: '8px', textAlign: 'right' }}>
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${property.lat},${property.lng}`}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.location)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
