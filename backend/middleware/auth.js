@@ -5,25 +5,37 @@ const admin = require('firebase-admin');
 // For now, we wrap the initialization in a try/catch so the server doesn't crash if the file is missing during setup.
 
 try {
-  let serviceAccount = null;
-  
-  try {
-     serviceAccount = require('../firebaseServiceAccount.json');
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-      console.log('Firebase Admin initialized successfully.');
-  } catch (err) {
-      console.warn('⚠️  firebaseServiceAccount.json not found. Firebase Auth middleware is running in permissive/mock mode until the file is added.');
-  }
+    let serviceAccount = null;
 
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
+        serviceAccount = {
+            project_id: process.env.FIREBASE_PROJECT_ID,
+            private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            client_email: process.env.FIREBASE_CLIENT_EMAIL
+        };
+    } else {
+        try {
+            serviceAccount = require('../firebaseServiceAccount.json');
+        } catch (err) {
+            console.warn('⚠️  firebaseServiceAccount.json not found.');
+        }
+    }
+
+    if (serviceAccount) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        console.log('Firebase Admin initialized successfully.');
+    } else {
+        console.warn('⚠️  Firebase credentials missing. Firebase Auth middleware is running in permissive/mock mode.');
+    }
 } catch (error) {
-  console.error('Firebase Admin initialization error:', error);
+    console.error('Firebase Admin initialization error:', error);
 }
 
 const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
     }
