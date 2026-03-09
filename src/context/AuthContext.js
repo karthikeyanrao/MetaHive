@@ -14,9 +14,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth State Changed - User:", user);
       setCurrentUser(user);
-      
+
       if (user) {
         try {
           // Fetch user data from Firestore using UID
@@ -24,23 +23,14 @@ export function AuthProvider({ children }) {
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUserRole(userData.role);
-            console.log("User Data from Firestore:", {
-              uid: user.uid,
-              email: user.email,
-              role: userData.role,
-              fullData: userData
-            });
-          } else {
-            console.log("No user document found for UID:", user.uid);
           }
         } catch (error) {
-          console.error("Error fetching user role:", error);
+          // silently fail; user role will remain null
         }
       } else {
         setUserRole(null);
-        console.log("No user is signed in");
       }
-      
+
       setLoading(false);
     });
 

@@ -11,15 +11,7 @@ async function main() {
 
   const nftAddress = await nft.getAddress();
   console.log("NFT Contract deployed at:", nftAddress);
-
-  // Issue a test badge
-  const testBadge = await nft.issueBadge(
-    deployer.address,
-    "MetaHive Tower",
-    "Crypto Valley, Block #1",
-    "https://metahive.com/badges/1"
-  );
-  console.log("Test badge issued:", await testBadge.wait());
+  require('fs').writeFileSync('deployed_addresses.txt', nftAddress);
 
   // Use receiver address from env or fallback (env strongly recommended on public networks)
   const RECEIVER_ADDRESS = process.env.RECEIVER_ADDRESS || "0x3F05ee1F593293d16328c9d0C6E75ef617920968";
@@ -32,7 +24,7 @@ async function main() {
 
   const senderAddress = await sender.getAddress();
   console.log("New Sender Contract deployed to:", senderAddress);
-  
+
   // Verify the receiver address
   const configuredReceiver = await sender.receiver();
   console.log("Configured receiver address:", configuredReceiver);

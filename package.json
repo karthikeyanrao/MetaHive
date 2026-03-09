@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
-    "build": "webpack --mode production",
+    "build": "react-scripts build",
     "test": "hardhat test",
     "compile": "hardhat compile",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
@@ -19,17 +19,21 @@
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
     "@fortawesome/react-fontawesome": "^3.1.0",
     "@openzeppelin/contracts": "^5.0.1",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.3.1",
     "firebase": "^11.3.0",
-    "firebase-admin": "^13.5.0",
+    "firebase-admin": "^13.7.0",
     "html2pdf.js": "^0.10.3",
     "leaflet": "^1.9.4",
+    "mongodb": "^7.1.0",
+    "mongoose": "^9.2.4",
     "openai": "^6.2.0",
     "react-icons": "^5.4.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.1.5",
     "react-scripts": "^5.0.1",
-    "three": "^0.173.0"
+    "react-toastify": "^11.0.5",
+    "three": "^0.173.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.26.9",

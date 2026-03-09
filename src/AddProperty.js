@@ -1,8 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
 import './AddProperty.css';
 import ThreeBackground from './ThreeBackground';
-import { db } from './context/firebase';    
-import { collection, addDoc, getDoc, doc } from 'firebase/firestore';
+import { db } from './context/firebase';
+import { collection, addDoc, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -81,7 +82,10 @@ function AddProperty() {
     setSelectedFiles(files);
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (e) => {
+    // Prevent any accidental double-fires from parent form onSubmit
+    if (e && e.preventDefault) e.preventDefault();
+
     const uniqueId = uuidv4();
 
     if (!formData.title || !formData.price || !formData.streetNumber || !formData.completeAddress) {
@@ -89,21 +93,7 @@ function AddProperty() {
       return;
     }
 
-    if (selectedFiles.length > 0) {
-      try {
-        selectedFiles.forEach(file => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            localStorage.setItem(`propertyImage_${uniqueId}_${file.name}`, reader.result);
-          };
-          reader.readAsDataURL(file);
-        });
-      } catch (error) {
-        console.error('Error storing images:', error);
-      }
-    }
-
-    handleSubmit(uniqueId);
+    await handleSubmit(uniqueId);
   };
 
   const handleSubmit = async (uniqueId) => {
@@ -112,45 +102,44 @@ function AddProperty() {
     try {
       // Enhanced geocoding for global locations
       const locationQuery = encodeURIComponent(formData.completeAddress);
-      
+
       // Use multiple geocoding strategies for better global coverage
       const geocodingPromises = [
         // Primary: OpenStreetMap Nominatim (global coverage)
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&addressdetails=1&extratags=1&namedetails=1&countrycodes=&accept-language=en`),
-        
+
         // Fallback: Try with different parameters for better international results
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${locationQuery}&limit=1&addressdetails=1&extratags=1&namedetails=1&countrycodes=&accept-language=en&dedupe=0`)
       ];
-      
+
       let data = [];
       let response;
-      
+
       // Try primary geocoding first
       try {
         response = await geocodingPromises[0];
         data = await response.json();
       } catch (error) {
-        console.log('Primary geocoding failed, trying fallback...');
         response = await geocodingPromises[1];
         data = await response.json();
       }
-   
+
       if (data.length === 0) {
         alert("Location not found. Please verify the address details. Make sure to include country name for international addresses.");
         setIsLoading(false);
         return;
       }
-   
+
       const lat = parseFloat(data[0].lat);
       const lng = parseFloat(data[0].lon);
       const displayName = data[0].display_name;
       const country = data[0].address?.country || 'Unknown';
       const countryCode = data[0].address?.country_code || 'XX';
-   
+
       const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
-         
+
         const propertyData = {
           id: uniqueId,
           title: formData.title,
@@ -177,14 +166,29 @@ function AddProperty() {
           buildingDescription: formData.buildingDescription,
           details: formData.details,
           furnishedStatus: formData.furnishedStatus,
-          amenities: formData.amenities
+          amenities: formData.amenities,
+          images: []
         };
-         
-        await addDoc(collection(db, 'properties'), propertyData);
+
+        const docRef = await addDoc(collection(db, 'properties'), propertyData);
         localStorage.setItem('propertyId', uniqueId);
-        
+
+        // Upload images to Firebase Storage (#16)
+        if (selectedFiles.length > 0) {
+          const storage = getStorage();
+          const imageUrls = [];
+          for (const file of selectedFiles) {
+            const storageRef = ref(storage, `properties/${uniqueId}/${file.name}`);
+            await uploadBytes(storageRef, file);
+            const downloadUrl = await getDownloadURL(storageRef);
+            imageUrls.push(downloadUrl);
+          }
+          // Persist URLs back to the Firestore document
+          await updateDoc(docRef, { images: imageUrls });
+        }
+
         alert('Property listed successfully! Redirecting to properties page...');
-        
+
         setFormData({
           title: '',
           price: '',
@@ -208,13 +212,12 @@ function AddProperty() {
           }
         });
         setSelectedFiles([]);
-        
+
         setTimeout(() => {
           navigate('/properties');
         }, 2000);
       }
     } catch (error) {
-      console.error('Error adding property:', error);
       alert('Failed to add property. Please try again.');
     } finally {
       setIsLoading(false);
@@ -229,11 +232,11 @@ function AddProperty() {
           Back
         </button>
         <h2>List Your Property</h2>
-        <form 
+        <form
           onSubmit={(e) => {
             e.preventDefault();
             handleUpload();
-          }} 
+          }}
           className="property-form"
         >
           <div className="form-group">
@@ -289,12 +292,12 @@ function AddProperty() {
               required
             />
             <small style={{ color: '#888', fontSize: '12px' }}>
-              <strong>Examples:</strong><br/>
-              🇺🇸 123 Main Street, New York, NY 10001, United States<br/>
-              🇬🇧 10 Downing Street, Westminster, London SW1A 2AA, United Kingdom<br/>
-              🇫🇷 1 Avenue des Champs-Élysées, 75008 Paris, France<br/>
-              🇯🇵 1-1-1 Shibuya, Shibuya City, Tokyo 150-0002, Japan<br/>
-              🇦🇺 1 Collins Street, Melbourne VIC 3000, Australia<br/>
+              <strong>Examples:</strong><br />
+              🇺🇸 123 Main Street, New York, NY 10001, United States<br />
+              🇬🇧 10 Downing Street, Westminster, London SW1A 2AA, United Kingdom<br />
+              🇫🇷 1 Avenue des Champs-Élysées, 75008 Paris, France<br />
+              🇯🇵 1-1-1 Shibuya, Shibuya City, Tokyo 150-0002, Japan<br />
+              🇦🇺 1 Collins Street, Melbourne VIC 3000, Australia<br />
               <em>Include country name for best results!</em>
             </small>
           </div>
@@ -456,7 +459,7 @@ function AddProperty() {
             </div>
           </div>
 
-         
+
           <div className="form-group">
             <label htmlFor="images">Property Images</label>
             <input
@@ -469,10 +472,9 @@ function AddProperty() {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="submit-button"
-            onClick={handleUpload}
             disabled={isLoading}
           >
             {isLoading ? 'Submitting...' : 'Add Property'}

@@ -22,6 +22,7 @@ contract RealEstateNFT is ERC721, Ownable {
     // Events
     event BuildingVerified(uint256 tokenId, string buildingName, bool isVerified);
     event BadgeIssued(uint256 tokenId, address recipient, string buildingName);
+    event PropertyPurchased(uint256 indexed tokenId, address indexed previousOwner, address indexed newOwner, uint256 price);
 
     constructor() ERC721("MetaHive Building Badge", "MHB") Ownable(msg.sender) {}
 
@@ -36,7 +37,7 @@ contract RealEstateNFT is ERC721, Ownable {
         string memory buildingName,
         string memory location,
         string memory badgeURI
-    ) public onlyOwner returns (uint256) {
+    ) public returns (uint256) {
         uint256 tokenId = _nextTokenId++;
         _safeMint(recipient, tokenId);
 
@@ -52,6 +53,22 @@ contract RealEstateNFT is ERC721, Ownable {
         emit BuildingVerified(tokenId, buildingName, true);
 
         return tokenId;
+    }
+
+    // Function to handle the purchase of a property: auto-transfers ETH and the NFT Badge simultaneously
+    function buyProperty(uint256 tokenId, address payable currentOwner) public payable {
+        require(exists(tokenId), "Badge does not exist");
+        require(ownerOf(tokenId) == currentOwner, "Incorrect property owner provided");
+        require(msg.value > 0, "No payment sent");
+
+        // 1. Forward the ETH payment securely to the Builder/Owner
+        currentOwner.transfer(msg.value);
+
+        // 2. Automatically transfer the NFT title deed to the new Buyer!
+        _transfer(currentOwner, msg.sender, tokenId);
+
+        // Emit a transparent log of the transfer history for tracking
+        emit PropertyPurchased(tokenId, currentOwner, msg.sender, msg.value);
     }
 
     // Function to verify a building's badge

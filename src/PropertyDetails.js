@@ -9,15 +9,16 @@ import { useAuth } from './context/AuthContext';
 import { SENDER_ADDRESS, SENDER_ABI } from './contracts/SenderContract';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from "./context/firebase"; // Ensure db is properly exported
-import { doc, deleteDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";  
+import { doc, deleteDoc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import BuildingBadge from './BuildingBadge';
-import PropertyReceipt from './receipt';  
+import PropertyReceipt from './receipt';
+import { toast } from 'react-toastify';
 
 import b1 from './b1.jpg';
 import b2 from './b2.jpg';
 import be1 from './be1.jpg';
 import k1 from './k1.jpg';
-import { Color } from "three/src/Three.Core.js";
+
 
 
 function PropertyDetails() {
@@ -32,13 +33,15 @@ function PropertyDetails() {
     return localStorage.getItem(`property_${id}_sold`) === 'true'
   });
   const [property, setProperty] = useState({});
-  const NFT_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  // Issue #3: NFT contract address from env var
+  const NFT_CONTRACT_ADDRESS = process.env.REACT_APP_NFT_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [showSchedulingModal, setShowSchedulingModal] = useState(false);
+  const [paymentEthAmount, setPaymentEthAmount] = useState(null);
   const [builderInfo, setBuilderInfo] = useState({
     name: 'Loading...',
     email: 'Loading...',
@@ -72,40 +75,61 @@ function PropertyDetails() {
     }
   };
 
+  // Fetch live ETH/USD price from CoinGecko
+  const fetchEthPrice = async () => {
+    try {
+      const res = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd'
+      );
+      const data = await res.json();
+      return data?.ethereum?.usd || null;
+    } catch (err) {
+      console.error('Failed to fetch ETH price:', err);
+      return null;
+    }
+  };
+
   const handleScheduleViewing = () => {
     fetchBuilderInfo();
     setShowSchedulingModal(true);
   };
 
   const handleDelete = async () => {
+
+    if (!currentUser) {
+      toast.error('You must be logged in to delete a property.');
+      return;
+    }
+    if (property.builderId !== currentUser.uid) {
+      toast.error('You are not authorized to delete this property. Only the listing builder can delete it.');
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this property?')) {
       try {
-        // Query to find the property by ID
         const propertiesCollection = collection(db, 'properties');
-        const q = query(propertiesCollection, where('id', '==', id)); // Query by ID
+        const q = query(propertiesCollection, where('id', '==', id));
         const querySnapshot = await getDocs(q);
-        
+
         if (!querySnapshot.empty) {
-          const propertyDoc = querySnapshot.docs[0].ref; // Get the document reference
-          
-          // Delete the property document
+          const propertyDoc = querySnapshot.docs[0].ref;
           await deleteDoc(propertyDoc);
-          alert('Property deleted successfully!');
+          toast.success('Property deleted successfully!');
           navigate('/properties');
           window.scrollTo(0, 0);
         } else {
-          alert('Property not found.'); // Handle case where property does not exist
+          toast.warning('Property not found.');
         }
       } catch (error) {
-        alert('Failed to delete property. Please try again.');
+        toast.error('Failed to delete property. Please try again.');
+        console.error('Delete error', error);
       }
     }
   };
 
-  // Rest of your existing constants (images, features, amenities)
+
   const images = [
-    { id: 1, url:be1 , alt: "Living Room" },
-    { id: 2, url:k1 , alt: "Kitchen" },
+    { id: 1, url: be1, alt: "Living Room" },
+    { id: 2, url: k1, alt: "Kitchen" },
     { id: 3, url: b1, alt: "Master Bedroom" },
     { id: 4, url: b2, alt: "Bathroom" },
   ];
@@ -149,29 +173,97 @@ function PropertyDetails() {
       }
 
       if (!isConnected) {
-        alert('Please connect your wallet first');
+        toast.warning('Please connect your wallet first');
         return;
       }
 
       if (!currentUser) {
-        alert('Please login to make a purchase');
+        toast.warning('Please login to make a purchase');
+        setPaymentStatus('');
+        return;
+      }
+
+      // Fetch live ETH/USD price and compute property cost in ETH
+      setPaymentStatus('Fetching live ETH price...');
+      const ethPriceUsd = await fetchEthPrice();
+      if (!ethPriceUsd) {
+        toast.error('Could not fetch live ETH price. Please try again.');
+        setPaymentStatus('');
+        return;
+      }
+
+      const propertyPriceUsd = Number(property.amount);
+      if (!propertyPriceUsd || propertyPriceUsd <= 0) {
+        toast.error('Invalid property price.');
+        setPaymentStatus('');
+        return;
+      }
+
+      const ethAmount = (propertyPriceUsd / ethPriceUsd).toFixed(8);
+      setPaymentEthAmount(ethAmount);
+
+      const confirmed = window.confirm(
+        `Property price: $${propertyPriceUsd.toLocaleString()} USD\n` +
+        `Live ETH price: $${ethPriceUsd.toLocaleString()} USD\n` +
+        `Amount to pay: ${ethAmount} ETH\n\nProceed with payment?`
+      );
+      if (!confirmed) {
         setPaymentStatus('');
         return;
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const senderContract = new ethers.Contract(
-        SENDER_ADDRESS,
-        SENDER_ABI,
-        signer
+      const buyerAddress = await signer.getAddress();
+
+      // DEBUG: Log what nftData we have
+      console.log('=== PURCHASE DEBUG ===');
+      console.log('property.nftData:', JSON.stringify(property.nftData));
+      console.log('NFT_CONTRACT_ADDRESS:', NFT_CONTRACT_ADDRESS);
+
+      // The builder's on-chain wallet is whoever minted the NFT (stored in nftData.mintedBy)
+      const builderWallet = property.nftData?.mintedBy;
+      console.log('builderWallet:', builderWallet);
+      if (!builderWallet) {
+        toast.error('Cannot determine property owner wallet. The NFT must be minted first.');
+        console.error('FAILED: builderWallet is falsy. property.nftData =', property.nftData);
+        setPaymentStatus('');
+        return;
+      }
+
+      // The real blockchain token ID (integer) stored when builder minted
+      const realTokenId = property.nftData?.realTokenId;
+      console.log('realTokenId:', realTokenId);
+      if (realTokenId === undefined || realTokenId === null) {
+        toast.error('Cannot determine NFT Token ID. Please ask the builder to re-mint.');
+        console.error('FAILED: realTokenId is missing. property.nftData =', property.nftData);
+        setPaymentStatus('');
+        return;
+      }
+
+      const amountToSend = ethers.parseEther(ethAmount);
+      setPaymentStatus(`Executing Secure Smart Contract Payment of ${ethAmount} ETH...`);
+
+      console.log('Calling buyProperty with:', { realTokenId, builderWallet, amountToSend: amountToSend.toString() });
+      toast.info(`Calling buyProperty: Token #${realTokenId}, Owner: ${builderWallet.substring(0, 10)}...`);
+
+      // Atomic trade: sends ETH to Builder + transfers NFT to Buyer in one transaction
+      const NFT_ABI = [
+        "function buyProperty(uint256 tokenId, address currentOwner) public payable"
+      ];
+      const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, signer);
+
+      const tx = await nftContract.buyProperty(
+        realTokenId,
+        builderWallet,
+        { value: amountToSend }
       );
 
-      const amountToSend = ethers.parseEther("0.00005");
-      setPaymentStatus('Processing payment...');
-
-      const tx = await senderContract.sendEther({ value: amountToSend });
-      await tx.wait();
+      console.log('buyProperty tx submitted:', tx.hash);
+      setPaymentStatus(`Payment submitted! Waiting for Ethereum block confirmation...`);
+      const receipt = await tx.wait();
+      console.log('buyProperty tx confirmed! Block:', receipt.blockNumber);
+      toast.success('NFT transferred successfully from Builder to Buyer!');
 
       // Update Firebase status
       const propertiesCollection = collection(db, 'properties');
@@ -180,12 +272,33 @@ function PropertyDetails() {
 
       if (!querySnapshot.empty) {
         const propertyDoc = querySnapshot.docs[0].ref;
-        await updateDoc(propertyDoc, { 
+        await updateDoc(propertyDoc, {
           isSold: 'Sold',
           buyerId: currentUser.uid,
           buyerName: currentUser?.displayName || 'Anonymous',
-          buyerAddress: account,
-          soldAt: new Date().toISOString()
+          buyerAddress: buyerAddress,
+          soldAt: new Date().toISOString(),
+          nftData: {
+            ...property.nftData,
+            mintedBy: buyerAddress, // New on-chain owner is the Buyer
+            previousOwner: builderWallet,
+            transactionHash: tx.hash,
+            purchaseDate: new Date().toISOString(),
+            qrCodeUrl: "" // Forces the QR component to regenerate matching the new tx
+          },
+          // Ownership log: every transfer is permanently recorded
+          ownershipLog: [
+            ...(property.ownershipLog || []),
+            {
+              from: builderWallet,
+              to: buyerAddress,
+              transactionHash: tx.hash,
+              tokenId: realTokenId,
+              date: new Date().toISOString(),
+              amountEth: ethAmount,
+              amountUsd: property.amount
+            }
+          ]
         });
         setIsSold(true);
 
@@ -209,11 +322,12 @@ function PropertyDetails() {
             latitude: property.latitude || 'N/A',
             longitude: property.longitude || 'N/A'
           },
-          amountPaid: property.amount,
+          amountPaidUsd: property.amount,
+          amountPaidEth: ethAmount,
           transactionHash: tx.hash,
-          contractAddress: SENDER_ADDRESS,
-          senderAddress: account,
-          receiverAddress: SENDER_ADDRESS
+          contractAddress: NFT_CONTRACT_ADDRESS,
+          senderAddress: buyerAddress,
+          receiverAddress: builderWallet
         };
 
         setReceiptData(receiptInfo);
@@ -221,14 +335,13 @@ function PropertyDetails() {
         setPaymentStatus('');
       }
     } catch (error) {
-      console.error('Payment error:', error);
       setPaymentStatus('');
       if (error.code === 'ACTION_REJECTED') {
-        alert('Transaction was rejected by user');
+        toast.warning('Transaction was rejected by user');
       } else if (error.code === 'INSUFFICIENT_FUNDS') {
-        alert('Insufficient funds to complete the transaction');
+        toast.error('Insufficient funds to complete the transaction');
       } else {
-        alert(`Payment failed: ${error.message || 'Please try again'}`);
+        toast.error(`Payment failed: ${error.message || 'Please try again'}`);
       }
     }
   };
@@ -247,12 +360,13 @@ function PropertyDetails() {
         const propertiesCollection = collection(db, 'properties');
         const q = query(propertiesCollection, where('id', '==', id));
         const querySnapshot = await getDocs(q);
-        
+
         if (!querySnapshot.empty) {
           const propertyDetails = querySnapshot.docs[0].data(); // Get the first document's data
-        
+
           // Fetch the NftMinted status
           const nftMintedStatus = propertyDetails.NftMinted; // Assuming NftMinted is a field in the property document
+
 
           setProperty({
             title: propertyDetails.title,
@@ -264,14 +378,19 @@ function PropertyDetails() {
             area: propertyDetails.area,
             furnished: propertyDetails.furnishedStatus,
             nftMinted: propertyDetails.NftMinted,
-            // Add these builder details
             builderName: propertyDetails.builderName || 'Not available',
             builderEmail: propertyDetails.builderEmail || 'Not available',
             builderId: propertyDetails.builderId,
-            buildingDescription: propertyDetails.buildingDescription,
-            // Add coordinates if available
-            latitude: propertyDetails.latitude || 'N/A',
-            longitude: propertyDetails.longitude || 'N/A'
+            buildingDescription: propertyDetails.buildingDescription || '',
+            description: propertyDetails.description || '',
+            rawMaterials: propertyDetails.rawMaterials || '',
+            details: propertyDetails.details || '',
+            amenities: propertyDetails.amenities || {},
+            streetNumber: propertyDetails.streetNumber || '',
+            latitude: propertyDetails.lat || 'N/A',
+            longitude: propertyDetails.lng || 'N/A',
+            nftData: propertyDetails.nftData || null,
+            ownershipLog: propertyDetails.ownershipLog || []
           });
 
           setIsSold(propertyDetails.isSold === 'Sold');
@@ -284,61 +403,46 @@ function PropertyDetails() {
         setLoading(false);
       }
     };
-    
+
     fetchPropertyDetails();
   }, [id]);
 
   useEffect(() => {
     const fetchCurrentUserDetails = async () => {
-      console.log('Checking currentUser:', currentUser); // Debug log 1
-
       if (currentUser) {
         try {
-          // Get the current user's document
           const userRef = doc(db, 'Users', currentUser.uid);
-          console.log('Fetching user document for UID:', currentUser.uid); // Debug log 2
-
           const userSnap = await getDoc(userRef);
-
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            console.log('Found user data:', userData); // Debug log 3
-            console.log('Builder email:', property.builderEmail); // Debug log 4
-            
             setCurrentUserEmail(userData.email);
-            
-          
-          } else {
-            console.log('No user document found for:', currentUser.uid); // Debug error 1
           }
         } catch (error) {
-          console.error('Error fetching current user:', error); // Debug error 2
+          console.error('Error fetching current user:', error);
         }
-      } else {
-        console.log('No currentUser available'); // Debug error 3
       }
     };
 
     fetchCurrentUserDetails();
-  }, [currentUser, property.builderEmail]); // Added property.builderEmail as dependency
-  
+  }, [currentUser, property.builderEmail]);
+
 
   return (
     <>
       <ThreeBackground />
       <div className={`property-details ${isSold ? 'sold-out' : ''}`}>
         <div className="property-header">
-          <div className="header-content" style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
-          <h1 className="property-title">{property.title}</h1>
-              <div className="property-location">
-                <i className="fas fa-map-marker-alt"></i>
-                {property.location}
-              </div>
+          <div className="header-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <h1 className="property-title">{property.title}</h1>
+            <div className="property-location">
+              <i className="fas fa-map-marker-alt"></i>
+              {property.location}
+            </div>
             <div className="title-price-row">
-              
+
               <div className="property-price">${property.amount}</div>
             </div>
-          
+
             <div className="property-tags">
               <span className="tag">Premium</span>
               <span className="tag">Verified</span>
@@ -364,9 +468,8 @@ function PropertyDetails() {
             {images.map((image) => (
               <div
                 key={image.id}
-                className={`thumbnail ${
-                  selectedImage === image.url ? "active" : ""
-                }`}
+                className={`thumbnail ${selectedImage === image.url ? "active" : ""
+                  }`}
                 onClick={() => setSelectedImage(image.url)}
               >
                 <img src={image.url} alt={image.alt} />
@@ -379,19 +482,32 @@ function PropertyDetails() {
           <div className="property-description">
             <h2 className="description-title">About this property</h2>
             <div className="description-content">
-              <p>
-                Experience luxury living at its finest in this stunning penthouse
-                suite. Featuring breathtaking city views, premium finishes, and
-                state-of-the-art amenities, this property represents the pinnacle
-                of urban sophistication.
-              </p>
+
+              {property.description && <p>{property.description}</p>}
+              {property.buildingDescription && (
+                <div className="highlights">
+                  <h3>Building Description</h3>
+                  <p>{property.buildingDescription}</p>
+                </div>
+              )}
+              {property.rawMaterials && (
+                <div className="highlights">
+                  <h3>Raw Materials Used</h3>
+                  <p>{property.rawMaterials}</p>
+                </div>
+              )}
+              {property.details && (
+                <div className="highlights">
+                  <h3>Property Details</h3>
+                  <p>{property.details}</p>
+                </div>
+              )}
               <div className="highlights">
-                <h3>Property Highlights</h3>
+                <h3>Property Specs</h3>
                 <ul>
-                  <li>Floor-to-ceiling windows with panoramic views</li>
-                  <li>Custom Italian kitchen with premium appliances</li>
-                  <li>Private elevator access</li>
-                  <li>Smart home automation system</li>
+                  <li>{property.bedrooms} Bedrooms · {property.bathrooms} Bathrooms</li>
+                  <li>{property.area} sq ft · {property.furnished || 'Status N/A'}</li>
+                  {property.streetNumber && <li>Street: {property.streetNumber}</li>}
                 </ul>
               </div>
             </div>
@@ -425,12 +541,18 @@ function PropertyDetails() {
             <div className="amenities-section">
               <h2 className="features-title">Amenities</h2>
               <div className="amenities-list">
-                {amenities.map((amenity, index) => (
-                  <div key={index} className="amenity-item">
-                    <i className="fas fa-check"></i>
-                    <span>{amenity}</span>
-                  </div>
-                ))}
+                {property.amenities && Object.entries(property.amenities)
+                  .filter(([, val]) => val)
+                  .map(([key]) => (
+                    <div key={key} className="amenity-item">
+                      <i className="fas fa-check"></i>
+                      <span>{key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</span>
+                    </div>
+                  ))
+                }
+                {(!property.amenities || Object.values(property.amenities).every(v => !v)) && (
+                  <p style={{ color: '#888' }}>No amenities listed for this property.</p>
+                )}
               </div>
             </div>
           </div>
@@ -447,52 +569,52 @@ function PropertyDetails() {
             </div>
           </div>
           <div className="contact-buttons">
-   
-          <button 
-        className="contact-button" 
-        onClick={toggleAgentPopup}
-      >
-        <i className="fas fa-phone-alt"></i> Contact Builder
-      </button>
-       {!isSold ? (
-    <>
-      
 
-      <button 
-        className="schedule-button" 
-        onClick={handleScheduleViewing}
-      >
-        <i className="fas fa-calendar-alt"></i> Schedule Viewing
-      </button>
-    
-      <button 
-        className={`pay-button`}
-        onClick={handlePayment}
-        disabled={!isConnected || property?.nftMinted !== 'Yes'}
-        style={{ cursor: !isConnected || property?.nftMinted !== 'Yes' ? 'not-allowed' : 'pointer' }}
-      >
-        <i className="fas fa-credit-card"></i>
-        Pay Now
-      </button>
-    </>
-  ) : (
-    // Only show delete button if current user's email matches builder's email
-  (
-      <button 
-        className="delete-button"
-        onClick={handleDelete}
-      >
-        <i className="fas fa-trash"></i> Delete Property
-      </button>
-    )
-  )}
+            <button
+              className="contact-button"
+              onClick={toggleAgentPopup}
+            >
+              <i className="fas fa-phone-alt"></i> Contact Builder
+            </button>
+            {!isSold ? (
+              <>
 
-  {paymentStatus && (
-    <div className={`payment-status ${paymentStatus.includes('failed') ? 'error' : ''}`}>
-      {paymentStatus}
-    </div>
-  )}
-</div>
+
+                <button
+                  className="schedule-button"
+                  onClick={handleScheduleViewing}
+                >
+                  <i className="fas fa-calendar-alt"></i> Schedule Viewing
+                </button>
+
+                <button
+                  className={`pay-button`}
+                  onClick={handlePayment}
+                  disabled={!isConnected || property?.nftMinted !== 'Yes'}
+                  style={{ cursor: !isConnected || property?.nftMinted !== 'Yes' ? 'not-allowed' : 'pointer' }}
+                >
+                  <i className="fas fa-credit-card"></i>
+                  Pay Now
+                </button>
+              </>
+            ) : (
+              // Only show delete button if current user's email matches builder's email
+              (
+                <button
+                  className="delete-button"
+                  onClick={handleDelete}
+                >
+                  <i className="fas fa-trash"></i> Delete Property
+                </button>
+              )
+            )}
+
+            {paymentStatus && (
+              <div className={`payment-status ${paymentStatus.includes('failed') ? 'error' : ''}`}>
+                {paymentStatus}
+              </div>
+            )}
+          </div>
         </div>
 
         {showAgentPopup && (
@@ -512,25 +634,24 @@ function PropertyDetails() {
         )}
         <div className={`verification-section ${isSold ? 'sold-out' : ''}`}>
           <h2>Property Verification</h2>
-          <BuildingBadge 
+          <BuildingBadge
             contractAddress={NFT_CONTRACT_ADDRESS}
-            tokenId={0}
             isSold={isSold}
             propertyTitle={property.title}
             nftMinted={property.nftMinted}
           />
         </div>
         <div>
-          
+
         </div>
-        
+
       </div>
       {showReceipt && receiptData && (
         <div className="receipt-modal-overlay">
           <div className="receipt-modal">
             <button className="close-modal" onClick={() => setShowReceipt(false)}>×</button>
-            <div dangerouslySetInnerHTML={{ 
-              __html: new PropertyReceipt(receiptData).generateHTMLReceipt() 
+            <div dangerouslySetInnerHTML={{
+              __html: new PropertyReceipt(receiptData).generateHTMLReceipt()
             }} />
             <button className="download-receipt" onClick={handleDownloadReceipt}>
               Download Receipt
@@ -538,8 +659,8 @@ function PropertyDetails() {
           </div>
         </div>
       )}
-      
-      <SchedulingModal 
+
+      <SchedulingModal
         isOpen={showSchedulingModal}
         onClose={() => setShowSchedulingModal(false)}
         builderInfo={builderInfo}

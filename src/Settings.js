@@ -44,7 +44,7 @@ function Settings() {
             const builderStatus = userData.isBuilder || false;
             setIsBuilder(builderStatus);
             localStorage.setItem('isBuilder', builderStatus);
-            
+
             setProfileData(prev => ({
               ...prev,
               name: userData.name || currentUser.displayName || 'User',
@@ -66,26 +66,7 @@ function Settings() {
     fetchUserData();
   }, [currentUser]);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (currentUser?.uid) {
-        try {
-          const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setProfileData(prev => ({
-              ...prev,
-              avatar: userData.avatar || localStorage.getItem('avatar') || currentUser.photoURL || ''
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      }
-    };
-  
-    fetchUserData();
-  }, [currentUser]);
+
 
   // Fetch property statistics
   useEffect(() => {
@@ -104,7 +85,7 @@ function Settings() {
         );
         const querySnapshot = await getDocs(q);
         const properties = querySnapshot.docs.map(doc => doc.data());
-        
+
         const listed = properties.length;
         const sold = properties.filter(p => p.isSold === 'Sold').length;
         const totalRevenue = properties
@@ -126,7 +107,7 @@ function Settings() {
         );
         const querySnapshot = await getDocs(q);
         const purchasedProperties = querySnapshot.docs.map(doc => doc.data());
-        
+
         const purchased = purchasedProperties.length;
         const totalSpent = purchasedProperties.reduce((total, p) => total + (p.price || 0), 0);
 
@@ -142,7 +123,7 @@ function Settings() {
       console.error('Error fetching property stats:', error);
     }
   };
-  
+
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -163,14 +144,14 @@ function Settings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (currentUser?.uid) {
       try {
         const userRef = doc(db, 'users', currentUser.uid);
-        
+
         // Check if the document exists
         const docSnap = await getDoc(userRef);
-        
+
         if (docSnap.exists()) {
           await updateDoc(userRef, {
             isBuilder: isBuilder,
@@ -183,7 +164,7 @@ function Settings() {
             isBuilder: isBuilder,
             name: profileData.name,
             email: profileData.email,
-            avatar: profileData.avatar, 
+            avatar: profileData.avatar,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           });
@@ -222,7 +203,7 @@ function Settings() {
 
         {/* Profile Header */}
         <div className="profile-header">
-         
+
           <div className="profile-info">
             <h1>{userData?.name || currentUser?.displayName || 'User'}</h1>
             <p className="user-role">{userRole || 'User'}</p>
@@ -242,7 +223,7 @@ function Settings() {
               </Link>
             </>
           )}
-          
+
           {userRole === 'Buyer' && (
             <>
               <Link to="/my-purchases" className="action-button secondary">
@@ -270,7 +251,7 @@ function Settings() {
               </div>
             </div>
           )}
-          
+
           {userRole === 'Buyer' && (
             <div className="stats-grid">
               <div className="stat-card">

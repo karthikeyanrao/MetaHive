@@ -27,13 +27,13 @@ function Navbar() {
         }
       }
     };
-  
+
     fetchBalance();
     const interval = setInterval(fetchBalance, 10000); // Fetch every 10s 
-  
+
     return () => clearInterval(interval);
   }, [isConnected, account]);
-  
+
 
   // const handleLogout = async () => {
   //   try {
@@ -51,36 +51,36 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">Invest and Ingest</Link>
+        <Link to="/">MetaHive</Link>
       </div>
       <div className="navbar-links">
         {currentUser ? (
           <>
-            <Link 
-              to="/properties" 
+            <Link
+              to="/properties"
               className={location.pathname === '/properties' ? 'active' : ''}
             >
               Browse Properties
             </Link>
-            
+
             <div className="account-section">
               <div className="wallet-container">
-              <button 
-  onClick={() => setShowWalletDropdown(!showWalletDropdown)} 
-  className="wallet-button"
->
-  {isConnected ? (
-    <>
-      <i className="fas fa-wallet"></i>
-      <img src={meta}  className="wallet-avatar" />
-      <i className="fas fa-chevron-down"></i>
-    </>
-  ) : (
-    <span onClick={connectWallet}>Connect Wallet</span>
-  )}
-</button>
+                <button
+                  onClick={() => setShowWalletDropdown(!showWalletDropdown)}
+                  className="wallet-button"
+                >
+                  {isConnected ? (
+                    <>
+                      <i className="fas fa-wallet"></i>
+                      <img src={meta} className="wallet-avatar" />
+                      <i className="fas fa-chevron-down"></i>
+                    </>
+                  ) : (
+                    <span onClick={connectWallet}>Connect Wallet</span>
+                  )}
+                </button>
 
-                
+
                 {showWalletDropdown && isConnected && (
                   <div className="wallet-dropdown">
                     <div className="wallet-info">
@@ -101,12 +101,12 @@ function Navbar() {
               </div>
 
               <div className="user-profile">
-                <button 
+                <button
                   className="avatar-button"
                   onClick={handleSettingsClick}
                 >
                   <i className="fas fa-user-circle"></i>
-                  <img src={user}  className="wallet-avatar" />
+                  <img src={user} className="wallet-avatar" />
                 </button>
                 {/* <button onClick={handleLogout} className="logout-button">
                   Logout
@@ -117,7 +117,7 @@ function Navbar() {
         ) : (
           <div className="auth-buttons">
             <div className="register-dropdown">
-              <button 
+              <button
                 className="register-button"
                 onMouseEnter={() => setShowRegisterDropdown(true)}
                 onMouseLeave={() => setShowRegisterDropdown(false)}
@@ -132,7 +132,7 @@ function Navbar() {
               </button>
             </div>
             <Link to="/login" className="login-nav-button">
-              Login 
+              Login
             </Link>
           </div>
         )}

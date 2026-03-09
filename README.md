@@ -1,94 +1,103 @@
-# MetaHive – Deployment to Public Testnets
+# MetaHive 🐝
+> Next-Generation Real Estate NFT Platform
 
-## Environment Variables
+MetaHive is a decentralized property listing and trading platform where buyers can purchase real estate using Ethereum, track ownership through blockchain NFTs, and interact directly with verified builders.
 
-Create a `.env` file in the project root with:
+## 🚀 Features
 
+- **Decentralized Purchasing**: Buy properties directly using Ethereum (ETH) with live CoinGecko USD/ETH price conversions.
+- **NFT Ownership Badges**: Mint and transfer `MHB` (MetaHive Building) ERC721 badges to verify authentic property ownership on the Ethereum Sepolia Testnet.
+- **Verification QR Codes**: Auto-generated QR codes on badges that link directly to the transaction hash on Etherscan.
+- **Builder Dashboards**: Builders can list, manage, and verify their properties.
+- **Firebase Backend**: Real-time property stats, document management, and seamless image uploading.
+- **Chatbot Integrations**: Built-in smart chatbot to assist users with navigation.
+
+---
+
+## 🛠 Tech Stack
+
+- **Frontend**: React.js, React Router, Ethers.js
+- **Smart Contracts**: Solidity, Hardhat, OpenZeppelin (ERC721)
+- **Database/Storage**: Firebase (Firestore, Authentication, Storage), MongoDB
+- **Notifications**: React Toastify
+- **CI/CD**: GitHub Actions
+
+---
+
+## 💻 Local Setup Instructions
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/your-username/MetaHive.git
+cd MetaHive
 ```
-PRIVATE_KEY=0xYOUR_PRIVATE_KEY
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
-HOLESKY_RPC_URL=https://ethereum-holesky.publicnode.com
-ETHERSCAN_API_KEY=YOUR_ETHERSCAN_OR_BLOCKSCOUT_KEY
-RECEIVER_ADDRESS=0xReceiverAddress
+
+### 2. Install Dependencies
+```bash
+npm install
 ```
 
-Use a fresh wallet with no real funds. Add test ETH via a faucet.
+### 3. Setup Environment Variables
+Create a `.env` file in the root folder using the provided example:
+```bash
+cp .env.example .env
+```
+Populate the file with your actual API keys (Firebase config, Infura RPCs, Private Keys, Etherscan API, etc.).
 
-## Deploy
+### 4. Setup Local Blockchain (Hardhat)
+In a separate terminal, spin up a local Hardhat node:
+```bash
+npx hardhat node
+```
 
-- Local: `npm run deploy:local`
-- Sepolia: `npm run deploy:sepolia`
-- Holesky: `npm run deploy:holesky`
+### 5. Deploy Smart Contracts Locally
+In your main terminal, deploy the contracts to the local node:
+```bash
+npm run deploy:local
+```
+Copy the deployed contract addresses and add them to your `.env` file as `SENDER_ADDRESS` and `REACT_APP_NFT_CONTRACT_ADDRESS`.
 
-The script prints deployed addresses you can share in hackathon submissions.
+### 6. Start the Frontend Application
+```bash
+npm start
+```
+Your app will be running at [http://localhost:3000](http://localhost:3000). Ensure your MetaMask is set to `Localhost 8545`.
 
-# Getting Started with Create React App
+---
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🌍 Deploying to Public Testnets (Sepolia)
 
-## Available Scripts
+To deploy your smart contracts to the live Sepolia testnet instead of localhost:
 
-In the project directory, you can run:
+1. Ensure your wallet has Testnet ETH (from a faucet).
+2. Ensure your `.env` file contains your real `PRIVATE_KEY` and `SEPOLIA_RPC_URL` (Infura/Alchemy).
+3. Run the deployment script:
+   ```bash
+   npm run deploy:sepolia
+   ```
+4. Verify the contract on Etherscan:
+   ```bash
+   npm run verify:sepolia
+   ```
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🧪 Testing
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+To run the smart contract unit tests:
+```bash
+npx hardhat test
+```
 
-### `npm test`
+To run the React frontend tests:
+```bash
+npm test
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🔒 Security
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **Smart Contracts**: Powered by OpenZeppelin's audited standards. Features `Ownable` permissions for restrictive minting.
+- **Database**: Secured by Firestore declarative RBAC rules (see `firestore.rules`). Users can only delete their own properties, and only authenticated users can mint NFTs. 
+- **Secrets**: API keys and Private Keys are strictly omitted from version control.

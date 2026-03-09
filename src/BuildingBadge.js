@@ -6,6 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ethers } from 'ethers';
 import './BuildingBadge.css';
 import { useAuth } from './context/AuthContext';
+import { v4 as uuidv4 } from 'uuid';
 
 // QR Code generation function
 const generateQRCode = (text) => {
@@ -14,46 +15,61 @@ const generateQRCode = (text) => {
   return qrUrl;
 };
 
-// Simplified ABI for basic NFT functionality
+// ABI matching the actual RealEstateNFT.sol contract
 const NFT_ABI = [
   {
     "inputs": [
-       { internalType: 'address', name: 'recipient', type: 'address' },
-        { internalType: 'string', name: 'buildingName', type: 'string' },
-        { internalType: 'string', name: 'location', type: 'string' },
-        { internalType: 'string', name: 'badgeURI', type: 'string' }
-      ],
-      name: 'issueBadge',
-      outputs: [
-        { internalType: 'uint256', name: '', type: 'uint256' }
-      ],
-      stateMutability: 'nonpayable',
-      type: 'function'
-    },
-    {
-      anonymous: false,
-      inputs: [
-        { indexed: false, internalType: 'uint256', name: 'tokenId', type: 'uint256' },
-        { indexed: false, internalType: 'address', name: 'recipient', type: 'address' },
-        { indexed: false, internalType: 'string', name: 'buildingName', type: 'string' }
-      ],
-      name: 'BadgeIssued',
-      type: 'event'
-    },
-    {
-      anonymous: false,
-      inputs: [
-        { indexed: true, internalType: 'address', name: 'from', type: 'address' },
-        { indexed: true, internalType: 'address', name: 'to', type: 'address' },
-        { indexed: true, internalType: 'uint256', name: 'tokenId', type: 'uint256' }
-      ],
-      name: 'Transfer',
-      type: 'event'
-  
+      { "internalType": "address", "name": "recipient", "type": "address" },
+      { "internalType": "string", "name": "buildingName", "type": "string" },
+      { "internalType": "string", "name": "location", "type": "string" },
+      { "internalType": "string", "name": "badgeURI", "type": "string" }
+    ],
+    "name": "issueBadge",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "getBuildingBadge",
+    "outputs": [
+      { "internalType": "string", "name": "buildingName", "type": "string" },
+      { "internalType": "string", "name": "location", "type": "string" },
+      { "internalType": "bool", "name": "verificationStatus", "type": "bool" },
+      { "internalType": "uint256", "name": "verificationDate", "type": "uint256" },
+      { "internalType": "string", "name": "badgeURI", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "ownerOf",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": false, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": false, "internalType": "address", "name": "recipient", "type": "address" },
+      { "indexed": false, "internalType": "string", "name": "buildingName", "type": "string" }
+    ],
+    "name": "BadgeIssued",
+    "type": "event"
   }
 ];
 
-function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMinted }) {
+function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted }) {
   const { currentUser, userRole } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -74,11 +90,11 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
   const storage = getStorage();
 
   // Generate a unique identifier for the property if none is provided
-  const propertyIdentifier = `property_${contractAddress}_${tokenId}`;
+  const propertyIdentifier = `property_${contractAddress}_${propertyTitle}`;
 
   // Log the nftMinted status when the component mounts
   useEffect(() => {
-   
+
   }, [nftMinted]); // Dependency array to run effect when nftMinted changes
 
   // Fetch property details when the component mounts or propertyTitle changes
@@ -89,11 +105,11 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
         const propertiesCollection = collection(db, 'properties'); // Reference to the properties collection
         const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle)); // Query to fetch property by title
         const querySnapshot = await getDocs(propertyQuery); // Execute the query
-        
+
         if (!querySnapshot.empty) {
           const propertyDoc = querySnapshot.docs[0].data(); // Get the first document's data
           setPropertyDetails(propertyDoc); // Set the property details in state
-          
+
         } else {
           console.error('No property found with the given title.');
         }
@@ -112,22 +128,22 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
     const fetchBadgeData = async () => {
       if (propertyTitle) {  // Changed condition to only check for propertyTitle
         try {
-               
+
           const propertiesCollection = collection(db, 'properties');
           const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle));
           const querySnapshot = await getDocs(propertyQuery);
-          
+
           if (!querySnapshot.empty) {
             const propertyDoc = querySnapshot.docs[0].data();
-           if (propertyDoc.NftMinted === "Yes" && propertyDoc.nftData) {
+            if (propertyDoc.NftMinted === "Yes" && propertyDoc.nftData) {
               const nftData = propertyDoc.nftData;
-              
+
               // Generate QR code if transaction hash exists but QR code is missing
               let qrCodeUrl = nftData.qrCodeUrl;
               if (nftData.transactionHash && nftData.transactionHash !== 'No Transaction Hash' && !qrCodeUrl) {
                 setQrCodeLoading(true);
                 qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${nftData.transactionHash}`);
-                
+
                 // Update Firestore with the generated QR code to persist it
                 try {
                   await updateDoc(doc(db, 'properties', querySnapshot.docs[0].id), {
@@ -138,7 +154,7 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
                   console.error('Error updating QR code in Firestore:', updateError);
                 }
               }
-              
+
               setBadgeData({
                 tokenId: nftData.tokenId || 'No Token ID',
                 mintedBy: nftData.mintedBy || 'No Minter Address',
@@ -157,23 +173,23 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
           console.error("Error in fetchBadgeData:", error);
         }
       } else {
-   
+
       }
     };
-    
+
     fetchBadgeData();
   }, [propertyTitle]); // Simplified dependency array
 
   // Add useEffect to log current user details
   useEffect(() => {
     if (currentUser) {
-     
+
       const fetchUserDetails = async () => {
         try {
           const userDoc = await getDoc(doc(db, 'Users', currentUser.uid));
           if (userDoc.exists()) {
             const userData = userDoc.data();
-                      }
+          }
         } catch (error) {
           console.error("Error fetching user details:", error);
         }
@@ -204,12 +220,11 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
       const docRef = await addDoc(badgesRef, {
         ...badgeData,
         contractAddress,
-        tokenId: tokenId.toString(),
         propertyIdentifier, // Use the generated identifier
         createdAt: new Date(),
         updatedAt: new Date()
       });
-    
+
       return docRef.id;
     } catch (error) {
       console.error("Error saving to Firestore:", error);
@@ -218,130 +233,137 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
   };
   const mintNFT = async (e) => {
     e.preventDefault(); // Prevent default form submission
-    
+
     if (!window.ethereum) {
-        setError("Ethereum provider not found. Please install MetaMask.");
-        return;
+      setError("Ethereum provider not found. Please install MetaMask.");
+      return;
     }
 
     try {
-        setMinting(true); // Show minting status
-        setError(null);
-        
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-          
-        const provider = new BrowserProvider(window.ethereum);
-           
-        const signer = await provider.getSigner();
-              
-        const userAddress = await signer.getAddress();
+      setMinting(true); // Show minting status
+      setError(null);
 
-        // Verify contract address
-        if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
-            throw new Error("Invalid contract address");
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      // DEBUG: confirm what we're minting with
+      console.log('=== MINT DEBUG ===');
+      console.log('contractAddress from prop:', contractAddress);
+      console.log('userAddress (signer):', userAddress);
+
+      // Verify contract address
+      if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
+        throw new Error("Invalid contract address");
+      }
+
+      const contract = new Contract(contractAddress, NFT_ABI, signer);
+
+      // Check network
+      const network = await provider.getNetwork();
+
+      // Generate QR code for the transaction
+      const qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/`);
+
+      // Call issueBadge matching the actual contract signature
+      console.log('Sending issueBadge to contract:', contractAddress);
+      const mintPromise = contract.issueBadge(
+        userAddress,
+        propertyTitle || 'MetaHive Property',
+        propertyDetails?.location || 'Unknown Location',
+        qrCodeUrl,
+        {
+          gasLimit: 500000
         }
+      );
 
-         const contract = new Contract(contractAddress, NFT_ABI, signer);
+      // Set a 2-minute timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Transaction timed out. Check MetaMask.")), 120000)
+      );
 
-        // Check network
-        const network = await provider.getNetwork();
-       
-        // Generate QR code for the transaction
-        const qrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/`);
-        
-        // Mint without payment to reduce gas fees
-        const mintPromise = contract.safeMint(
-            userAddress, 
-            qrCodeUrl, // Use QR code URL instead of image URL
-            { 
-              gasLimit: 200000, // Set gas limit to reduce fees
-              gasPrice: ethers.parseUnits("20", "gwei") // Lower gas price
-            }
-        );
-        
-        // Set a 2-minute timeout
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Transaction timed out. Check MetaMask.")), 120000)
-        );
-        
-        const tx = await Promise.race([mintPromise, timeoutPromise]);
+      const tx = await Promise.race([mintPromise, timeoutPromise]);
 
-        const receipt = await tx.wait(); // Wait for confirmation
-        
-        // Generate final QR code with transaction hash
-        const finalQrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${tx.hash}`);
-        
-        // Save badge data to Firestore
-        const badgeData = {
-            buildingName: propertyTitle,
-            location: propertyDetails?.location,
+      const receipt = await tx.wait(); // Wait for confirmation
+
+      // Extract the real tokenId from the transaction receipt logs
+      let actualTokenId = "0";
+      for (const log of receipt.logs) {
+        try {
+          const parsedLog = contract.interface.parseLog({ topics: [...log.topics], data: log.data });
+          if (parsedLog && parsedLog.name === 'BadgeIssued') {
+            actualTokenId = parsedLog.args[0].toString();
+          }
+        } catch (e) {
+          // ignore parsing errors for other events
+        }
+      }
+
+      // Generate a distinct UID for this property instead of relying on the sequence
+      const shortUid = uuidv4().split('-')[0].toUpperCase();
+      const formattedTokenId = `MH-26-${shortUid}`;
+
+      // Generate final QR code with transaction hash
+      const finalQrCodeUrl = generateQRCode(`https://sepolia.etherscan.io/tx/${tx.hash}`);
+
+      // Save badge data to Firestore
+      const badgeDataToSave = {
+        buildingName: propertyTitle,
+        location: propertyDetails?.location,
+        qrCodeUrl: finalQrCodeUrl,
+        mintedBy: userAddress,
+        mintedAt: new Date(),
+        transactionHash: tx.hash,
+        tokenId: formattedTokenId,
+        realTokenId: Number(actualTokenId)
+      };
+
+      await saveBadgeToFirestore(badgeDataToSave);
+
+      // Update property in Firestore to mark as minted
+      if (propertyDetails) {
+        const propertiesCollection = collection(db, 'properties');
+        const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle));
+        const querySnapshot = await getDocs(propertyQuery);
+
+        if (!querySnapshot.empty) {
+          const propertyDoc = querySnapshot.docs[0];
+          const nftData = {
             qrCodeUrl: finalQrCodeUrl,
+            transactionHash: tx.hash,
             mintedBy: userAddress,
             mintedAt: new Date(),
-            transactionHash: tx.hash
-        };
-        
-        await saveBadgeToFirestore(badgeData);
-        
-        // Update property in Firestore to mark as minted
-        if (propertyDetails) {
-            const propertiesCollection = collection(db, 'properties');
-            const propertyQuery = query(propertiesCollection, where('title', '==', propertyTitle));
-            const querySnapshot = await getDocs(propertyQuery);
-            
-            if (!querySnapshot.empty) {
-                const propertyDoc = querySnapshot.docs[0];
-                const nftData = {
-                    qrCodeUrl: finalQrCodeUrl,
-                    transactionHash: tx.hash,
-                    mintedBy: userAddress,
-                    mintedAt: new Date(),
-                    tokenId: tokenId.toString(),
-                    contractAddress: contractAddress
-                };
-                
-                await updateDoc(doc(db, 'properties', propertyDoc.id), {
-                    NftMinted: "Yes",
-                    nftData: nftData
-                });
-                
-                // Update local state to show badge immediately without needing to reload
-                setBadgeData(nftData);
-                
-            }
-        }
-        
-        // Update UI
-        setShowMintForm(false);
-        
-    } catch (error) {
-        console.error("Error minting NFT:", error);
-        setError("Error minting NFT: " + (error.message || error));
-    } finally {
-        setMinting(false);
-    }
-};
+            tokenId: formattedTokenId,
+            realTokenId: Number(actualTokenId),
+            contractAddress: contractAddress
+          };
 
+          await updateDoc(doc(db, 'properties', propertyDoc.id), {
+            NftMinted: "Yes",
+            nftData: nftData
+          });
 
-  const fetchPropertyData = async () => {
-    if (propertyId) {
-      try {
-        const propertyDoc = await getDoc(doc(db, 'Properties', propertyId));
-        if (propertyDoc.exists()) {
-          setPropertyData(propertyDoc.data());
-          setError(null);
-        } else {
-          setError('Property not found');
+          // Update local state to show badge immediately without needing to reload
+          setBadgeData(nftData);
+
         }
-      } catch (err) {
-        setError('Error fetching property data: ' + err.message);
       }
+
+      // Update UI
+      setShowMintForm(false);
+
+    } catch (error) {
+      console.error("Error minting NFT:", error);
+      setError("Error minting NFT: " + (error.message || error));
+    } finally {
+      setMinting(false);
     }
   };
 
-  useEffect(() => {
-    fetchPropertyData();
-  }, [propertyId]);
+
+  // fetchPropertyData is handled by the useEffect above that queries by propertyTitle
 
   // Add function to check if user can mint
   const canUserMint = () => {
@@ -364,15 +386,15 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
                       <span>Generating QR Code...</span>
                     </div>
                   ) : (
-                    <img 
-                      src={badgeData.qrCodeUrl || generateQRCode(`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`)} 
-                      alt="Transaction QR Code" 
+                    <img
+                      src={badgeData.qrCodeUrl || generateQRCode(`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`)}
+                      alt="Transaction QR Code"
                       className="qr-code-image"
                       onLoad={() => setQrCodeLoading(false)}
                       onError={() => setQrCodeLoading(false)}
-                                   />
+                    />
                   )}
-                 
+
                 </div>
               )}
             </div>
@@ -382,15 +404,15 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
               <p><strong>Token ID:</strong> {badgeData?.tokenId || 'N/A'}</p>
               {badgeData?.mintedBy && (
                 <p>
-                  <strong>Minted by:</strong> 
-                  {badgeData.mintedBy === 'No Minter Address' ? 'N/A' : 
+                  <strong>Current Owner:</strong>
+                  {badgeData.mintedBy === 'No Minter Address' ? 'N/A' :
                     `${badgeData.mintedBy.substring(0, 8)}...${badgeData.mintedBy.substring(badgeData.mintedBy.length - 6)}`
                   }
                 </p>
               )}
               <p>
-                <strong>Minted on:</strong> 
-                {badgeData?.mintedAt ? 
+                <strong>Last Updated:</strong>
+                {badgeData?.mintedAt ?
                   (typeof badgeData.mintedAt === 'object' && 'seconds' in badgeData.mintedAt) ?
                     new Date(badgeData.mintedAt.seconds * 1000).toLocaleDateString() :
                     new Date(badgeData.mintedAt).toLocaleDateString()
@@ -398,10 +420,10 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
               </p>
               {badgeData?.transactionHash && badgeData.transactionHash !== 'No Transaction Hash' && (
                 <p>
-                  <strong>Transaction:</strong> 
-                  <a 
-                    href={`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`} 
-                    target="_blank" 
+                  <strong>Transaction:</strong>
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${badgeData.transactionHash}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                   >
                     {`${badgeData.transactionHash.substring(0, 10)}...`}
@@ -417,8 +439,8 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
           <>
             {!showMintForm ? (
               <div className="mint-section">
-                <button 
-                  className="mint-button" 
+                <button
+                  className="mint-button"
                   onClick={handleShowMintForm}
                   disabled={loading}
                 >
@@ -429,13 +451,13 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
               <div className="mint-form-container">
                 <form onSubmit={mintNFT} className="mint-form">
                   <h3>Mint New Building Badge </h3>
-                  
-                  <div style={{  flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
-                    <label style={{ marginRight: '20px', marginBottom:'10px'}}>Building Name: {propertyTitle}</label>
-                    <label style={{ marginRight: '20px', marginBottom:'10px' }}>Location: {propertyDetails?.location}</label>
-                    <label style={{ marginRight: '20px', marginBottom:'10px' }}>Area: {propertyDetails?.area} SqFt</label>
-                    <label style={{ marginRight: '20px', marginBottom:'10px' }}>Bedrooms: {propertyDetails?.bedrooms}</label>
-                    <label style={{ marginRight: '20px' , marginBottom:'10px' }}>Bathrooms: {propertyDetails?.bathrooms}</label>
+
+                  <div style={{ flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Building Name: {propertyTitle}</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.location}</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Area: {propertyDetails?.area} SqFt</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bedrooms: {propertyDetails?.bedrooms}</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bathrooms: {propertyDetails?.bathrooms}</label>
                   </div>
 
                   <div className="form-group">
@@ -447,15 +469,15 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
                   </div>
 
                   <div className="form-buttons">
-                    <button 
-                      type="submit" 
-                      className="mint-button" 
+                    <button
+                      type="submit"
+                      className="mint-button"
                       disabled={minting}
                     >
                       {minting ? 'Minting...' : 'Mint Badge '}
                     </button>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="cancel-button"
                       onClick={() => {
                         setShowMintForm(false);
@@ -490,7 +512,7 @@ function BuildingBadge({ contractAddress, tokenId, isSold, propertyTitle, nftMin
         <div className="sold-out-section">
           <div className="sold-out-badge">
             <i className="fas fa-check-circle"></i>
-            
+
           </div>
         </div>
       )}
