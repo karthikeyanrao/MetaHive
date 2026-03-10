@@ -64,7 +64,8 @@ function PropertyList() {
         return {
           id: doc._id,
           title: pDetails.title || doc.title || 'Untitled Property',
-          location: pDetails.address || doc.location || doc.address || 'Unknown Location',
+          // Prefer human-readable address over raw coordinate string
+          location: pDetails.address || doc.address || doc.location || 'Unknown Location',
           price: pDetails.price || doc.price || 0,
           isSold: (doc.status || '').toLowerCase() === 'sold' || (doc.isSold || '').toLowerCase() === 'sold' || (doc.isSold || '').toLowerCase() === 'yes' ? 'Sold' : 'For Sale',
           randomImage: rawImages.length > 0 ? rawImages[0] : [img1, img2, img3, img4, img6][Math.floor(Math.random() * 5)],

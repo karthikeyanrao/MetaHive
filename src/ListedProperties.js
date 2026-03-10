@@ -45,34 +45,33 @@ function ListedProperties() {
           return [];
         })();
 
-        // ROBUST COORDINATE PARSING
-        let latitude = 12.9716;
-        let longitude = 77.5946;
-        if (pDetails.location?.lat !== undefined) {
-          latitude = Number(pDetails.location.lat);
-          longitude = Number(pDetails.location.lng);
-        } else if (typeof doc.location === 'string' && doc.location.includes(',')) {
-          const parts = doc.location.split(',');
-          latitude = parseFloat(parts[0]) || latitude;
-          longitude = parseFloat(parts[1]) || longitude;
-        } else if (typeof doc.location === 'object' && doc.location?.lat) {
-          latitude = Number(doc.location.lat);
-          longitude = Number(doc.location.lng);
-        } else if (doc.lat !== undefined) {
-          latitude = Number(doc.lat);
-          longitude = Number(doc.lng || doc.longitude);
-        }
+        // Prefer human-readable address; avoid showing raw "lat,lng" strings
+        const resolvedLocation = (() => {
+          const address = doc.propertyDetails?.address || doc.address;
+          if (address) return address;
+
+          const loc = doc.location;
+          if (typeof loc === 'string') {
+            const parts = loc.split(',').map(p => p.trim());
+            const looksLikeCoords =
+              parts.length === 2 &&
+              !Number.isNaN(parseFloat(parts[0])) &&
+              !Number.isNaN(parseFloat(parts[1]));
+            return looksLikeCoords ? 'Unknown Location' : loc;
+          }
+          return 'Unknown Location';
+        })();
 
         return {
           id: doc._id,
           isSold: (doc.status || '').toLowerCase() === 'sold' || (doc.isSold || '').toLowerCase() === 'yes' || (doc.isSold || '').toLowerCase() === 'sold' ? 'Sold' : 'New',
-          title: pDetails.title || doc.title || 'Untitled Property',
-          price: pDetails.price || doc.price || 0,
-          location: pDetails.address || doc.location || doc.address || 'Unknown Location',
-          bedrooms: pDetails.bedrooms || doc.bedrooms || 0,
-          bathrooms: pDetails.bathrooms || doc.bathrooms || 0,
-          area: pDetails.area || doc.area || 0,
-          NftMinted: doc.NftMinted || pDetails.NftMinted || 'No',
+          title: doc.propertyDetails?.title || doc.title || 'Untitled Property',
+          price: doc.propertyDetails?.price || doc.price || 0,
+          location: resolvedLocation,
+          bedrooms: doc.propertyDetails?.bedrooms || doc.bedrooms || 0,
+          bathrooms: doc.propertyDetails?.bathrooms || doc.bathrooms || 0,
+          area: doc.propertyDetails?.area || doc.area || 0,
+          NftMinted: doc.NftMinted || doc.propertyDetails?.NftMinted || 'No',
           builderId: doc.builderId,
           description: pDetails.description || doc.description || doc.buildingDescription || 'No description',
           createdAt: doc.createdAt,
