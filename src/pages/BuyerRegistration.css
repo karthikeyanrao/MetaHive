@@ -1,0 +1,50 @@
+/* Import the shared styles */
+@import './BuilderRegistration.css';
+
+/* ---- Buyer registration overrides ---- */
+.buyer-registration {
+  min-height: 100vh;
+  padding: 100px 20px 60px;
+  background: #0a0a0a;
+}
+
+/* ---- Status Messages ---- */
+.success-message {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  color: #4ade80;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin: 16px 0;
+  text-align: center;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin: 16px 0;
+  text-align: center;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

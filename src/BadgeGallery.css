@@ -1,95 +1,128 @@
+/* ============================================
+   BADGE GALLERY.CSS — NFT Badge Gallery
+   MetaHive Design System (Dark Minimal)
+   ============================================ */
+
 .badge-gallery {
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
+  padding: 32px;
+  background: #141414;
+  border-radius: 16px;
+  border: 1px solid #2a2a2a;
 }
 
 .badge-gallery h2 {
+  font-family: 'Outfit', sans-serif;
   text-align: center;
-  margin-bottom: 2rem;
-  color: #ff4d4d;
+  margin-bottom: 28px;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
 }
 
 .badge-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
 }
 
+/* ---- Badge Card ---- */
 .badge-card {
-  background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
-  border-radius: 12px;
+  background: #1f1f1f;
+  border-radius: 14px;
+  border: 1px solid #2a2a2a;
   overflow: hidden;
-  transition: transform 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.2s, transform 0.2s;
 }
 
 .badge-card:hover {
-  transform: translateY(-5px);
+  border-color: #3a3a3a;
+  transform: translateY(-4px);
 }
 
 .badge-card-image {
   width: 100%;
   height: 200px;
   overflow: hidden;
+  background: #141414;
 }
 
 .badge-card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.badge-card:hover .badge-card-image img {
+  transform: scale(1.04);
 }
 
 .badge-card-content {
-  padding: 1.5rem;
+  padding: 20px;
 }
 
 .badge-card-content h3 {
-  margin: 0 0 1rem 0;
-  color:gold;
+  font-family: 'Outfit', sans-serif;
+  margin: 0 0 12px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .badge-card-content p {
-  margin: 0.5rem 0;
-  color: #b3b3b3;
+  margin: 6px 0;
+  color: #9ca3af;
+  font-size: 13px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 6px;
 }
 
 .badge-owner {
-  font-family: monospace;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.5rem;
-  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 11px;
+  background: #2a2a2a;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #a3a3a3;
+  word-break: break-all;
 }
 
 .badge-status {
-  margin-top: 1rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  display: flex;
+  margin-top: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 6px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .badge-status.verified {
-  background: rgba(46, 196, 182, 0.1);
-  color: #2ec4b6;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #4ade80;
 }
 
 .badge-status.unverified {
-  background: rgba(255, 77, 77, 0.1);
-  color: #ff4d4d;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
+/* ---- State messages ---- */
 .badge-gallery-loading,
 .badge-gallery-error,
 .no-badges {
   text-align: center;
-  padding: 3rem;
-  color: #888;
+  padding: 48px 24px;
+  color: #9ca3af;
+  font-size: 14px;
+  font-family: 'Manrope', sans-serif;
 }
 
 .no-badges {
@@ -97,16 +130,21 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .no-badges i {
-  font-size: 3rem;
-  color: #ff4d4d;
+  font-size: 2.5rem;
+  color: #a3a3a3;
 }
 
+/* ---- Responsive ---- */
 @media (max-width: 768px) {
   .badge-grid {
     grid-template-columns: 1fr;
   }
-} 
+
+  .badge-gallery {
+    padding: 20px;
+  }
+}

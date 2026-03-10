@@ -108,9 +108,9 @@ function Navbar() {
                   <i className="fas fa-user-circle"></i>
                   <img src={user} className="wallet-avatar" />
                 </button>
-                {/* <button onClick={handleLogout} className="logout-button">
+                <button onClick={handleLogout} className="logout-button">
                   Logout
-                </button> */}
+                </button>
               </div>
             </div>
           </>

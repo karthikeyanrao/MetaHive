@@ -1,0 +1,323 @@
+/* ============================================
+   METAHIVE GLOBAL DESIGN SYSTEM
+   Dark Minimal Aesthetic — Award-Winning UI
+   ============================================ */
+
+/* CSS Custom Properties */
+:root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --tag: #1f1f1f;
+    --border: #2a2a2a;
+    --dark: #ffffff;
+    --dark-2: #f0f0f0;
+    --mid: #a3a3a3;
+    --muted: #9ca3af;
+    --accent: #e5e5e5;
+    --yellow: #FFD700;
+    --yellow-hover: #FACC15;
+
+    --navbar-h: 64px;
+    --radius-pill: 999px;
+    --radius-card: 16px;
+    --radius-btn: 12px;
+
+    --transition: all 0.2s ease;
+    --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--dark);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+}
+
+h1 {
+    font-size: clamp(36px, 5vw, 48px);
+    font-weight: 700;
+}
+
+h2 {
+    font-size: clamp(24px, 3.5vw, 32px);
+    font-weight: 600;
+}
+
+h3 {
+    font-size: clamp(18px, 2.5vw, 22px);
+    font-weight: 600;
+}
+
+h4 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+p {
+    color: var(--mid);
+    line-height: 1.7;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+button {
+    cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+}
+
+input,
+textarea,
+select {
+    font-family: 'Manrope', sans-serif;
+}
+
+/* Utility: Section Label (uppercase caps) */
+.section-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* Utility: Card */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 24px;
+}
+
+/* Button: Primary (white pill) */
+.btn-primary {
+    background: var(--dark);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary:hover {
+    background: var(--dark-2);
+}
+
+/* Button: CTA (yellow) */
+.btn-cta {
+    background: var(--yellow);
+    color: var(--bg);
+    padding: 12px 24px;
+    border-radius: var(--radius-btn);
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-cta:hover {
+    background: var(--yellow-hover);
+}
+
+/* Input styles */
+.input {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dark);
+    padding: 12px 16px;
+    border-radius: var(--radius-btn);
+    font-size: 14px;
+    font-family: 'Manrope', sans-serif;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    border-color: var(--dark);
+}
+
+.input::placeholder {
+    color: var(--muted);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background: transparent;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+/* Loading state */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 16px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* Spinner */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--dark);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Page wrapper (below fixed navbar) */
+.page-wrapper {
+    margin-top: var(--navbar-h);
+    min-height: calc(100vh - var(--navbar-h));
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Divider */
+.divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+}
+
+/* Badge: Active */
+.badge-active {
+    background: var(--dark);
+    color: var(--bg);
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    font-family: 'Manrope', sans-serif;
+    text-transform: uppercase;
+}
+
+/* Badge: Sold / Muted */
+.badge-sold {
+    background: var(--tag);
+    color: var(--muted);
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+    font-family: 'Manrope', sans-serif;
+    text-transform: uppercase;
+}
+
+/* Error & Success messages */
+.msg-error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    padding: 12px 16px;
+    border-radius: var(--radius-btn);
+    font-size: 14px;
+}
+
+.msg-success {
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #4ade80;
+    padding: 12px 16px;
+    border-radius: var(--radius-btn);
+    font-size: 14px;
+}

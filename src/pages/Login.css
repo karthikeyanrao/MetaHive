@@ -1,0 +1,396 @@
+/* ============================================
+   LOGIN.CSS — Auth / Login Page
+   MetaHive Design System (Dark Minimal)
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    overflow-x: hidden;
+    min-height: 100vh;
+    background: #0a0a0a;
+    font-family: 'Manrope', sans-serif;
+    color: #ffffff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3a3a3a;
+}
+
+/* ---- Page Wrapper ---- */
+.wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1;
+    background: #0a0a0a;
+}
+
+/* Ambient background */
+.wrapper::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 30% 20%, rgba(255, 215, 0, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ---- Form Card ---- */
+.form-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    padding: 40px;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 20px;
+    margin: 20px auto;
+    z-index: 1;
+    animation: fadeSlideUp 0.5s ease-out forwards;
+}
+
+/* Slide/rotate transitions kept from original logic */
+.wrapper.animate-signUp .form-wrapper.sign-in {
+    transform: rotate(7deg);
+    animation: animateRotate .7s ease-in-out forwards;
+    animation-delay: .3s;
+}
+
+.wrapper.animate-signIn .form-wrapper.sign-in {
+    animation: animateSignIn 1.5s ease-in-out forwards;
+}
+
+@keyframes animateSignIn {
+    0% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(-500px);
+    }
+
+    100% {
+        transform: translateX(0) rotate(7deg);
+    }
+}
+
+.wrapper .form-wrapper.sign-up {
+    transform: rotate(7deg);
+}
+
+.wrapper.animate-signIn .form-wrapper.sign-up {
+    animation: animateRotate .7s ease-in-out forwards;
+    animation-delay: .3s;
+}
+
+@keyframes animateRotate {
+    0% {
+        transform: rotate(7deg);
+    }
+
+    100% {
+        transform: rotate(0);
+        z-index: 1;
+    }
+}
+
+.wrapper.animate-signUp .form-wrapper.sign-up {
+    animation: animateSignUp 1.5s ease-in-out forwards;
+}
+
+@keyframes animateSignUp {
+    0% {
+        transform: translateX(0);
+        z-index: 1;
+    }
+
+    50% {
+        transform: translateX(500px);
+    }
+
+    100% {
+        transform: translateX(0) rotate(7deg);
+    }
+}
+
+/* ---- Heading ---- */
+h2 {
+    font-family: 'Outfit', sans-serif;
+    text-align: center;
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 28px;
+}
+
+/* ---- Input Group ---- */
+.input-group {
+    position: relative;
+    margin: 20px 0;
+    width: 100%;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 13px 16px;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: 'Manrope', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus,
+.input-group input:valid {
+    border-color: #ffffff;
+}
+
+.input-group label {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #9ca3af;
+    pointer-events: none;
+    transition: all 0.2s;
+    background: #141414;
+    padding: 0 4px;
+}
+
+.input-group input:focus~label,
+.input-group input:valid~label {
+    top: -8px;
+    left: 12px;
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+}
+
+.input-group input::placeholder {
+    color: #9ca3af;
+}
+
+/* ---- Forgot Password ---- */
+.forgot-pass {
+    text-align: right;
+    margin-top: -8px;
+    margin-bottom: 4px;
+}
+
+.forgot-pass a {
+    color: #9ca3af;
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.2s;
+}
+
+.forgot-pass a:hover {
+    color: #ffffff;
+}
+
+/* ---- Submit / Login Button ---- */
+.btn,
+.register-button {
+    margin: 12px 0;
+    width: 100%;
+    background: #FFD700;
+    color: #0a0a0a;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Manrope', sans-serif;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.btn:hover,
+.register-button:hover {
+    background: #FACC15;
+    transform: translateY(-2px);
+}
+
+/* ---- Sign Link ---- */
+.sign-link {
+    text-align: center;
+    margin-top: 16px;
+}
+
+.sign-link p {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.sign-link a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.sign-link a:hover {
+    color: #FFD700;
+}
+
+/* ---- Error Message ---- */
+.error-message {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    padding: 10px 14px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+/* ---- Register Dropdown ---- */
+.register-dropdown {
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    min-width: 140px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px;
+    margin-top: 4px;
+}
+
+.register-dropdown:hover .dropdown-menu,
+.register-dropdown:focus-within .dropdown-menu {
+    display: block;
+}
+
+.dropdown-item {
+    color: #a3a3a3;
+    padding: 10px 12px;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.dropdown-item:hover {
+    background: #1f1f1f;
+    color: #ffffff;
+}
+
+/* Inline register button (text variant) */
+.register-button[style],
+button.register-button {
+    background: none !important;
+    border: none !important;
+    color: #ffffff !important;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 4px 8px;
+    transition: color 0.2s;
+    width: auto;
+    margin: 0;
+    display: inline;
+    font-size: 13px;
+}
+
+button.register-button:hover {
+    color: #FFD700 !important;
+    transform: none;
+    background: none !important;
+}
+
+/* ---- Password Toggle ---- */
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px;
+    z-index: 1;
+    transition: color 0.2s;
+}
+
+.password-toggle:hover {
+    color: #ffffff;
+}
+
+.input-group input[type="password"],
+.input-group input[type="text"] {
+    padding-right: 42px;
+}
+
+/* ---- Animations ---- */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---- Responsive ---- */
+@media screen and (max-width: 480px) {
+    .form-wrapper {
+        padding: 28px 20px;
+        margin: 12px;
+        border-radius: 16px;
+    }
+
+    .input-group {
+        margin: 16px 0;
+    }
+}

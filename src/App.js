@@ -1,8 +1,8 @@
 import React from 'react';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './Navbar';
-import Home from './Home';
+import Navbar from './components/Navbar';
+import Landing from './pages/Landing';
 import Login from './login';
 import PropertyList from './PropertyList';
 import PropertyDetails from './PropertyDetails';
@@ -28,7 +28,7 @@ function App() {
           <div className="App">
             <Navbar />
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/properties" element={<PropertyList />} />
               <Route path="/property/:id" element={<PropertyDetails />} />

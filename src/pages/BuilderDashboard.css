@@ -1,0 +1,433 @@
+/* ============================================
+   BUILDER DASHBOARD.CSS
+   MetaHive Design System (Dark Minimal)
+   ============================================ */
+
+/* ---- Page Container ---- */
+.listed-properties-container {
+  min-height: 100vh;
+  padding: 88px 2rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Back Button ---- */
+.back-button {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #a3a3a3;
+  padding: 9px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 28px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.back-button:hover {
+  border-color: #3a3a3a;
+  background: #1f1f1f;
+  color: #ffffff;
+}
+
+/* ---- Page Header ---- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-header h1 {
+  font-family: 'Outfit', sans-serif;
+  color: #ffffff;
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Add Property CTA Button ---- */
+.add-property-btn {
+  background: #FFD700;
+  color: #0a0a0a;
+  padding: 11px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.2s, transform 0.2s;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-property-btn:hover {
+  background: #FACC15;
+  transform: translateY(-2px);
+}
+
+/* ---- Filter Tabs ---- */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  color: #a3a3a3;
+  padding: 9px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  border-color: #3a3a3a;
+  background: #1f1f1f;
+  color: #ffffff;
+}
+
+.filter-btn.active {
+  background: #ffffff;
+  color: #0a0a0a;
+  border-color: #ffffff;
+  font-weight: 600;
+}
+
+/* ---- Properties Grid ---- */
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* ---- Property Card ---- */
+.property-card {
+  background: #141414;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+  transition: border-color 0.2s, transform 0.25s;
+  position: relative;
+}
+
+.property-card:hover {
+  border-color: #3a3a3a;
+  transform: translateY(-4px);
+}
+
+.property-card.sold {
+  opacity: 0.7;
+}
+
+/* ---- Property Status Badge ---- */
+.property-status {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.status-badge.new {
+  background: #ffffff;
+  color: #0a0a0a;
+}
+
+.status-badge.sold {
+  background: #1f1f1f;
+  color: #9ca3af;
+  border: 1px solid #2a2a2a;
+}
+
+/* ---- Property Link (makes card clickable) ---- */
+.property-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* ---- Property Image ---- */
+.property-image {
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+  background: #1f1f1f;
+}
+
+.property-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.property-card:hover .property-image img {
+  transform: scale(1.04);
+}
+
+/* ---- Property Info ---- */
+.property-info {
+  padding: 20px;
+}
+
+.property-info h3 {
+  font-family: 'Outfit', sans-serif;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.property-info .price {
+  font-family: 'Outfit', sans-serif;
+  color: #FFD700;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.property-info .location {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.property-info .details {
+  color: #a3a3a3;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.property-info .description {
+  color: #9ca3af;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Property Actions ---- */
+.property-actions {
+  padding: 0 20px 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 9px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.action-btn.view {
+  background: transparent;
+  border-color: #2a2a2a;
+  color: #a3a3a3;
+}
+
+.action-btn.view:hover {
+  background: #1f1f1f;
+  border-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.action-btn.delete {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ---- Property Meta (bottom strip) ---- */
+.property-meta {
+  padding: 12px 20px;
+  border-top: 1px solid #2a2a2a;
+  background: transparent;
+}
+
+.property-meta p {
+  color: #9ca3af;
+  font-size: 11px;
+  margin: 2px 0;
+}
+
+/* ---- No Properties / Access Denied States ---- */
+.no-properties,
+.access-denied {
+  text-align: center;
+  padding: 64px 24px;
+  background: #141414;
+  border-radius: 16px;
+  border: 1px solid #2a2a2a;
+}
+
+.no-properties h3,
+.access-denied h2 {
+  font-family: 'Outfit', sans-serif;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.no-properties p,
+.access-denied p {
+  color: #9ca3af;
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+
+/* Add First Property */
+.add-first-property-btn {
+  background: #FFD700;
+  color: #0a0a0a;
+  padding: 12px 28px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.2s, transform 0.2s;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-first-property-btn:hover {
+  background: #FACC15;
+  transform: translateY(-2px);
+}
+
+/* Home link */
+.home-link {
+  background: transparent;
+  color: #a3a3a3;
+  padding: 11px 24px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: 1px solid #2a2a2a;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-link:hover {
+  border-color: #3a3a3a;
+  background: #1f1f1f;
+  color: #ffffff;
+}
+
+/* ---- Loading ---- */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  color: #9ca3af;
+  font-size: 14px;
+  gap: 12px;
+}
+
+.loading::before {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 2px solid #2a2a2a;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .listed-properties-container {
+    padding: 80px 1rem 3rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .filters {
+    justify-content: center;
+  }
+
+  .properties-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .property-actions {
+    flex-direction: column;
+  }
+}

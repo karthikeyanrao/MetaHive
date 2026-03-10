@@ -92,8 +92,8 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
           const nested = docData.propertyDetails || {};
           setPropertyDetails({
             ...nested,
-            // flat fields win if nested is empty
-            location: nested.location || docData.location || docData.address || '',
+            // Prioritize address (place text) over coordinates
+            location: nested.address || docData.address || nested.location || docData.location || '',
             address: nested.address || docData.address || '',
             area: nested.area || docData.area || '',
             bedrooms: nested.bedrooms || docData.bedrooms || '',
@@ -341,7 +341,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
             </div>
             <div className="badge-details">
               <p><strong>Property:</strong> {propertyTitle}</p>
-              <p><strong>Location:</strong> {propertyDetails?.location || propertyDetails?.address}</p>
+              <p><strong>Location:</strong> {propertyDetails?.address || propertyDetails?.location}</p>
               <p><strong>Token ID:</strong> {badgeData?.tokenId || 'N/A'}</p>
               {badgeData?.mintedBy && (
                 <p>
@@ -395,7 +395,7 @@ function BuildingBadge({ contractAddress, isSold, propertyTitle, nftMinted, prop
 
                   <div style={{ flexWrap: 'wrap', alignItems: 'center', marginBottom: '20px' }}>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Building Name: {propertyTitle}</label>
-                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.location || propertyDetails?.address}</label>
+                    <label style={{ marginRight: '20px', marginBottom: '10px' }}>Location: {propertyDetails?.address || propertyDetails?.location}</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Area: {propertyDetails?.area} SqFt</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bedrooms: {propertyDetails?.bedrooms}</label>
                     <label style={{ marginRight: '20px', marginBottom: '10px' }}>Bathrooms: {propertyDetails?.bathrooms}</label>

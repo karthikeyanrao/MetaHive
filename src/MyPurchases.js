@@ -82,7 +82,6 @@ function MyPurchases() {
 
   return (
     <>
-      <ThreeBackground />
       <div className="my-purchases-container">
         <button className="back-button" onClick={() => window.history.back()}>
           Back

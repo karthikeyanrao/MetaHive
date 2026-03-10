@@ -197,264 +197,259 @@ function AddProperty() {
   };
 
   return (
-    <>
-      <ThreeBackground />
-      <div className="add-property">
-        <button className="back-button" onClick={() => window.history.back()}>
-          Back
-        </button>
-        <h2>List Your Property</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleUpload();
-          }}
-          className="property-form"
-        >
+    <div className="add-property">
+      {/* Back Button */}
+      <button className="back-button" onClick={() => navigate(-1)}>
+        Back to Dashboard
+      </button>
+
+      <h2>List Your Property</h2>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleUpload();
+        }}
+        className="property-form"
+      >
+        {/* Section 0: Property Identity */}
+        <div className="form-group">
+          <label htmlFor="title">Property Title</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="e.g. Modern Minimalist Villa"
+            required
+          />
+        </div>
+
+        {/* Section 1: Basic Stats */}
+        <div className="form-section-title">Core Specifications</div>
+        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="title">Property Title</label>
+            <label htmlFor="price">Price ($)</label>
             <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
+              type="number"
+              id="price"
+              name="price"
+              value={formData.price}
               onChange={handleChange}
-              placeholder="Enter property title"
+              placeholder="0.00"
               required
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="price">Price ($)</label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="Enter price"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="streetNumber">Street Number *</label>
-              <input
-                type="text"
-                id="streetNumber"
-                name="streetNumber"
-                value={formData.streetNumber}
-                onChange={handleChange}
-                placeholder="e.g., 123, 45A, Block B"
-                required
-              />
-            </div>
-          </div>
-
           <div className="form-group">
-            <label htmlFor="completeAddress">Complete Property Address *</label>
-            <textarea
-              id="completeAddress"
-              name="completeAddress"
-              value={formData.completeAddress}
-              onChange={handleChange}
-              placeholder="Enter the complete address of the property (anywhere in the world)"
-              rows="3"
-              required
-            />
-            <small style={{ color: '#888', fontSize: '12px' }}>
-              <strong>Examples:</strong><br />
-              🇺🇸 123 Main Street, New York, NY 10001, United States<br />
-              🇬🇧 10 Downing Street, Westminster, London SW1A 2AA, United Kingdom<br />
-              🇫🇷 1 Avenue des Champs-Élysées, 75008 Paris, France<br />
-              🇯🇵 1-1-1 Shibuya, Shibuya City, Tokyo 150-0002, Japan<br />
-              🇦🇺 1 Collins Street, Melbourne VIC 3000, Australia<br />
-              <em>Include country name for best results!</em>
-            </small>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="area">Area (sq ft)</label>
+            <label htmlFor="area">Living Area (Sq Ft)</label>
             <input
               type="number"
               id="area"
               name="area"
               value={formData.area}
               onChange={handleChange}
-              placeholder="Enter area in square feet"
+              placeholder="e.g. 2500"
               required
             />
           </div>
+        </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="bedrooms">Bedrooms</label>
-              <input
-                type="number"
-                id="bedrooms"
-                name="bedrooms"
-                value={formData.bedrooms}
-                onChange={handleChange}
-                placeholder="Number of bedrooms"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="bathrooms">Bathrooms</label>
-              <input
-                type="number"
-                id="bathrooms"
-                name="bathrooms"
-                value={formData.bathrooms}
-                onChange={handleChange}
-                placeholder="Number of bathrooms"
-                required
-              />
-            </div>
-          </div>
-
+        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Describe your property"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="rawMaterials">Raw Materials Used</label>
-            <textarea
-              id="rawMaterials"
-              name="rawMaterials"
-              value={formData.rawMaterials}
-              onChange={handleChange}
-              placeholder="List the raw materials used in construction"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="buildingDescription">Building Description</label>
-            <textarea
-              id="buildingDescription"
-              name="buildingDescription"
-              value={formData.buildingDescription}
-              onChange={handleChange}
-              placeholder="Describe the building structure and features"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="details">Details (e.g., number of fans, lights)</label>
-            <textarea
-              id="details"
-              name="details"
-              value={formData.details}
-              onChange={handleChange}
-              placeholder="Enter details about fans, lights, etc."
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Furnished Status</label>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <label>
-                <input
-                  type="radio"
-                  name="furnishedStatus"
-                  value="Furnished"
-                  checked={formData.furnishedStatus === 'Furnished'}
-                  onChange={handleChange}
-                />
-                Furnished
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="furnishedStatus"
-                  value="Non-Furnished"
-                  checked={formData.furnishedStatus === 'Non-Furnished'}
-                  onChange={handleChange}
-                />
-                Non-Furnished
-              </label>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Amenities</label>
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <label>
-                <input
-                  type="checkbox"
-                  name="carParking"
-                  checked={formData.amenities.carParking}
-                  onChange={handleAmenityChange}
-                />
-                Car Parking
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="swimmingPool"
-                  checked={formData.amenities.swimmingPool}
-                  onChange={handleAmenityChange}
-                />
-                Swimming Pool
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="security"
-                  checked={formData.amenities.security}
-                  onChange={handleAmenityChange}
-                />
-                Security
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  name="cctv"
-                  checked={formData.amenities.cctv}
-                  onChange={handleAmenityChange}
-                />
-                CCTV
-              </label>
-            </div>
-          </div>
-
-
-          <div className="form-group">
-            <label htmlFor="images">Property Images</label>
+            <label htmlFor="bedrooms">Bedrooms</label>
             <input
-              type="file"
-              id="images"
-              name="images"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
+              type="number"
+              id="bedrooms"
+              name="bedrooms"
+              value={formData.bedrooms}
+              onChange={handleChange}
+              placeholder="Qty"
               required
             />
           </div>
 
-          <button
-            type="submit"
-            className="submit-button"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Submitting...' : 'Add Property'}
-          </button>
-        </form>
-      </div>
-    </>
+          <div className="form-group">
+            <label htmlFor="bathrooms">Bathrooms</label>
+            <input
+              type="number"
+              id="bathrooms"
+              name="bathrooms"
+              value={formData.bathrooms}
+              onChange={handleChange}
+              placeholder="Qty"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Section 2: Location */}
+        <div className="form-section-title">Property Location</div>
+        <div className="form-row">
+          <div className="form-group" style={{ flex: 1 }}>
+            <label htmlFor="streetNumber">Unit / Street Number</label>
+            <input
+              type="text"
+              id="streetNumber"
+              name="streetNumber"
+              value={formData.streetNumber}
+              onChange={handleChange}
+              placeholder="e.g. 45A, Block B"
+              required
+            />
+          </div>
+          <div className="form-group" style={{ flex: 2 }}>
+            <label htmlFor="completeAddress">Full Street Address</label>
+            <input
+              type="text"
+              id="completeAddress"
+              name="completeAddress"
+              value={formData.completeAddress}
+              onChange={handleChange}
+              placeholder="Full address for map verification"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Section 3: Descriptions */}
+        <div className="form-section-title">Descriptions & Materials</div>
+        <div className="form-group">
+          <label htmlFor="description">Executive Summary</label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="A brief overview of the property's main attraction points..."
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="rawMaterials">Construction Materials</label>
+          <textarea
+            id="rawMaterials"
+            name="rawMaterials"
+            value={formData.rawMaterials}
+            onChange={handleChange}
+            placeholder="List primary materials used (e.g. Italian Marble, Teak Wood, Reinforced Steel)..."
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="buildingDescription">Structure & Design</label>
+          <textarea
+            id="buildingDescription"
+            name="buildingDescription"
+            value={formData.buildingDescription}
+            onChange={handleChange}
+            placeholder="Detail the architectural style, floor plans, and unique structural features..."
+            required
+          />
+        </div>
+
+        {/* Section 4: Status & Amenities */}
+        <div className="form-section-title">Status & Amenities</div>
+        <div className="form-group">
+          <label>Furnished Status</label>
+          <div className="radio-group">
+            <label>
+              <input
+                type="radio"
+                name="furnishedStatus"
+                value="Furnished"
+                checked={formData.furnishedStatus === 'Furnished'}
+                onChange={handleChange}
+              />
+              Fully Furnished
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="furnishedStatus"
+                value="Non-Furnished"
+                checked={formData.furnishedStatus === 'Non-Furnished'}
+                onChange={handleChange}
+              />
+              Non-Furnished
+            </label>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label>Included Amenities</label>
+          <div className="checkbox-group">
+            <label>
+              <input
+                type="checkbox"
+                name="carParking"
+                checked={formData.amenities.carParking}
+                onChange={handleAmenityChange}
+              />
+              Car Parking
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                name="swimmingPool"
+                checked={formData.amenities.swimmingPool}
+                onChange={handleAmenityChange}
+              />
+              Swimming Pool
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                name="security"
+                checked={formData.amenities.security}
+                onChange={handleAmenityChange}
+              />
+              24/7 Security
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                name="cctv"
+                checked={formData.amenities.cctv}
+                onChange={handleAmenityChange}
+              />
+              CCTV Coverage
+            </label>
+          </div>
+        </div>
+
+        {/* Section 5: Media */}
+        <div className="form-section-title">Property Media</div>
+        <div className="form-group">
+          <label>Upload High-Res Images (Max 5)</label>
+          <div className="file-upload-wrapper">
+            <label className="file-upload-label">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                required={selectedFiles.length === 0}
+              />
+              <i className="fas fa-cloud-upload-alt"></i>
+              <span>{selectedFiles.length > 0 ? `${selectedFiles.length} images selected` : 'Click to browse or drag and drop images'}</span>
+            </label>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="submit-button"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Processing Listing...' : 'Complete & List Property'}
+        </button>
+      </form>
+    </div>
   );
 }
 

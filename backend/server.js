@@ -3,6 +3,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const verifyToken = require('./middleware/auth');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 
 // Initialize express app
 const app = express();
@@ -392,6 +396,57 @@ app.post('/api/purchases', verifyToken, async (req, res) => {
         res.status(201).json(purchase);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+// ============================================================
+// 5. CHATBOT (AI)
+// ============================================================
+
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { message, history } = req.body;
+
+        // Fetch limited properties for context
+        const properties = await Property.find({ status: { $ne: 'sold' } }).limit(50);
+
+        const propertyContext = properties.map(p => {
+            return `Title: ${p.title || p.propertyDetails?.title || 'Unknown'} - Location: ${p.location || p.propertyDetails?.location?.lat || 'Unknown'} (Address: ${p.address || p.propertyDetails?.address || 'Unknown'}) - Price: $${p.price || p.propertyDetails?.price || 'Unknown'} - Bedrooms: ${p.bedrooms || p.propertyDetails?.bedrooms} - Bathrooms: ${p.bathrooms || p.propertyDetails?.bathrooms}`;
+        }).join('\n');
+
+        const systemInstruction = `You are the MetaHive Assistant, a helpful AI assistant for the MetaHive real estate platform.
+MetaHive allows users to buy and sell real estate using blockchain technology. 
+
+FOR BUYERS: 
+- Buyers can browse properties, connect their MetaMask wallet, and pay using cryptocurrency.
+- Upon purchase, buyers receive an NFT certificate representing ownership. This NFT is stored securely on the blockchain. 
+- All files/images are stored using IPFS (InterPlanetary File System) for decentralized storage.
+- Transaction fees are minimal, but network gas fees apply based on blockchain usage.
+
+FOR BUILDERS:
+- Builders can register on the platform by providing license details.
+- They can list properties by "Add Property", filling in details and uploading images (saved to IPFS).
+- When a property is sold, the smart contract handles the transfer automatically.
+- Builders must log in to see their listings and manage the NFT certificates.
+
+Here is a list of some properties currently on the platform:\n${propertyContext}\n
+If users ask about properties in a specific location (e.g., Chennai, Mumbai, NY), look at the list above to answer with specific counts, prices, and names. Address the user politely in short paragraphs. Be concise.`;
+
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash-latest",
+            systemInstruction: systemInstruction
+        });
+
+        const chat = model.startChat({
+            history: history || [],
+        });
+
+        const result = await chat.sendMessage(message);
+        const response = await result.response;
+
+        res.json({ text: response.text() });
+    } catch (err) {
+        console.error("Chatbot Error:", err);
+        res.status(500).json({ error: "Failed to process chat" });
     }
 });
 

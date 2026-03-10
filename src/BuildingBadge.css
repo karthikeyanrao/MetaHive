@@ -1,5 +1,11 @@
+/* ============================================
+   BUILDING BADGE.CSS — NFT Badge Component
+   MetaHive Design System (Dark Minimal)
+   ============================================ */
+
+/* ---- Main Container ---- */
 .building-badge {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -7,132 +13,507 @@
 }
 
 .badge-container {
-  background: linear-gradient(145deg, #1a1a2e, #16213e);
-  border-radius: 15px;
-  padding: 2rem;
+  background: #111;
+  border: 1px solid #232323;
+  border-radius: 12px;
+  padding: 24px;
   max-width: 500px;
   margin: 0 auto;
-  box-shadow: 0 8px 16px rgba(0, 212, 255, 0.2);
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  transition: all 0.3s ease;
 }
 
+.badge-container:hover {
+  border-color: #3a3a3a;
+  transform: translateY(-3px);
+}
+
+/* ---- Badge Header ---- */
 .badge-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2a2a2a;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .badge-header h3 {
-  color: #e0e0e0;
+  font-family: 'Outfit', sans-serif;
+  color: #ffffff;
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .verified-stamp {
-  background: rgba(0, 212, 255, 0.2);
-  color: #00d4ff;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  color: #4ade80;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  gap: 5px;
 }
 
 .verified-stamp i {
-  color: #00d4ff;
+  color: #4ade80;
 }
 
+/* ---- Badge Content ---- */
 .badge-content {
   display: flex;
-  gap: .5rem;
-  margin-bottom: 1rem;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 16px;
+  align-items: center;
+  text-align: center;
 }
 
 .badge-image {
-  flex: 0 0 180px;
-  height: 180px;
-  
- 
+  flex: 0 0 200px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid #232323;
 }
 
 .badge-image img {
-  width: 100%;
-  height: 100%;
+  width: 80%;
+  height: 80%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.badge-image img:hover {
+  transform: scale(1.04);
 }
 
 .badge-info {
   flex: 1;
-  color: #e0e0e0;
+  min-width: 160px;
+  color: #a3a3a3;
 }
 
 .badge-info h4 {
+  font-family: 'Outfit', sans-serif;
   color: #ffffff;
-  margin: 0 0 1rem 0;
-  font-size: 1.3rem;
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .badge-info p {
-  margin: 0.5rem 0;
+  margin: 6px 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #b0b0b0;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 13px;
 }
 
 .badge-info i {
-  color: #808080;
+  color: #9ca3af;
+  width: 16px;
 }
 
+/* ---- Badge Footer ---- */
 .badge-footer {
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #2a2a2a;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #808080;
-  font-size: 0.9rem;
+  color: #9ca3af;
+  font-size: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .badge-authenticity {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: #a0a0a0;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 12px;
 }
 
 .badge-authenticity::before {
   content: '✓';
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  line-height: 20px;
-  text-align: center;
-  background: rgba(144, 144, 144, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
   border-radius: 50%;
-  color: #90EE90;
+  color: #4ade80;
+  font-size: 10px;
 }
 
-/* Hover effects */
-.badge-container:hover {
+/* ---- Mint Section ---- */
+.mint-section {
+  text-align: center;
+  margin: 24px 0;
+}
+
+.mint-button {
+  background: #ffffff;
+  color: #0a0a0a;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mint-button:hover {
+  background: #e5e5e5;
   transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
 }
 
-.badge-image img:hover {
-  transform: scale(1.05);
+.mint-button:disabled {
+  background: #2a2a2a;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ---- Badge Error State ---- */
+.badge-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ---- Mint Form ---- */
+.mint-form-container,
+.mint-form {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.mint-form h3 {
+  font-family: 'Outfit', sans-serif;
+  text-align: center;
+  margin-bottom: 24px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9ca3af;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Manrope', sans-serif;
+  background: transparent;
+  color: #ffffff;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #ffffff;
+}
+
+.form-group input::placeholder {
+  color: #9ca3af;
+}
+
+.form-help {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.cancel-button {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: 11px 24px;
+  border-radius: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* ---- Modal ---- */
+.modal {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.close {
+  color: #9ca3af;
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  line-height: 1;
+}
+
+.close:hover {
+  color: #ffffff;
+}
+
+/* ---- NFT Badge ---- */
+.nft-badge {
+  background: #0a0a0a !important;
+  border: 1px solid #232323 !important;
+  border-radius: 12px !important;
+  padding: 32px !important;
+  max-width: 480px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  transition: all 0.3s ease;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.nft-badge:hover {
+  border-color: #444 !important;
+  transform: translateY(-4px);
+}
+
+.nft-badge h3 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  margin-bottom: 24px;
+  color: #ffffff !important;
+  text-align: center;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border-bottom: 1px solid #232323 !important;
+  padding-bottom: 16px;
+  width: 100%;
+}
+
+/* NFT image */
+.nft-image {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid #232323 !important;
   transition: transform 0.3s ease;
 }
 
-/* Small screens */
+.nft-image:hover {
+  transform: scale(1.02);
+}
+
+/* ---- QR Code ---- */
+.qr-code-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+}
+
+.qr-code-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 4px;
+}
+
+.qr-overlay {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: #0a0a0a;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qr-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.qr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.qr-loading i {
+  font-size: 1.8rem;
+  color: #9ca3af;
+}
+
+.qr-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #232323;
+  border-radius: 10px;
+  color: #a3a3a3;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.qr-info i {
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+/* ---- Badge Details ---- */
+.badge-details {
+  width: 100%;
+  background: #0d0d0d !important;
+  border: 1px solid #1a1a1a !important;
+  padding: 24px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.badge-details p {
+  margin: 12px 0;
+  font-size: 13px;
+  color: #a3a3a3 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 1.4;
+}
+
+.badge-details strong {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  color: #4b5563 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+
+.badge-details a {
+  color: #ffffff;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.badge-details a:hover {
+  opacity: 0.8;
+}
+
+/* ---- Error Message ---- */
+.error-message {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #f87171;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-top: 12px;
+  font-size: 13px;
+  font-family: 'Manrope', sans-serif;
+}
+
+/* ---- Responsive ---- */
 @media (max-width: 600px) {
   .badge-content {
     flex-direction: column;
@@ -141,510 +522,17 @@
   .badge-image {
     flex: 0 0 auto;
     width: 100%;
-    max-width: 300px;
+    max-width: 280px;
     margin: 0 auto;
   }
 
   .badge-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: 8px;
     text-align: center;
   }
-}
 
-/* Add these styles to your existing CSS */
-.mint-section {
-  text-align: center;
-  margin: 2rem 0;
-}
-
-.mint-button {
-  background: linear-gradient(145deg, #00d4ff, #0099cc);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 212, 255, 0.2);
-}
-
-.mint-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 212, 255, 0.3);
-}
-
-.mint-button:disabled {
-  background: #888;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.badge-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 2rem;
-}
-
-/* Add to your existing CSS */
-.mint-form {
-  background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
-  padding: 2rem;
-  border-radius: 15px;
-  max-width: 500px;
-  margin: 2rem auto;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-  display: flex;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #fff;
-  
-}
-
-
-.form-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 2rem;
-}
-
-.cancel-button {
-  background: transparent;
-  border: 1px solid #ff4d4d;
-  color: #ff4d4d;
-  padding: 12px 24px;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.cancel-button:hover {
-  background: rgba(255, 77, 77, 0.1);
-}
-
-.mint-button:disabled {
-  background: #888;
-  cursor: not-allowed;
-}
-
-/* Add or update these styles */
-.mint-form-container {
-  background: rgba(28, 28, 36, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  max-width: 800px;
-  margin: 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mint-form h3 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #fff;
-  font-weight: 700;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  transition: all 0.3s ease;
-}
-
-.form-group input:focus {
-  border-color: #4361ee;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.form-help {
-  display: block;
-  margin-top: 5px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.form-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 2rem;
-}
-
-.mint-button {
-  background: linear-gradient(145deg, #ff4d4d, #ff6b6b);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.cancel-button {
-  background: transparent;
-  border: 1px solid #ff4d4d;
-  color: #ff4d4d;
-  padding: 12px 24px;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.cancel-button:hover {
-  background: rgba(255, 77, 77, 0.1);
-}
-
-.mint-button:disabled {
-  background: #888;
-  cursor: not-allowed;
-}
-
-.modal {
-  display: flex;
-  position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
-}
-
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%; /* Could be more or less, depending on screen size */
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* NFT Badge Styling */
-.nft-badge {
-  padding: 24px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  transition: all 0.3s ease;
-  max-width: 800px;
-  margin: 0 auto 30px;
-}
-
-.nft-badge:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25);
-}
-
-.nft-badge h3 {
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: #1a1a2e;
-  text-align: center;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 12px;
-}
-
-.badge-content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 25px;
-}
-
-.badge-image {
-  flex: 1;
-  min-width: 240px;
-  padding: 10px;
-}
-
-.nft-image {
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
-  object-fit: cover;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 5px solid white;
-  transition: transform 0.3s ease;
-}
-
-.nft-image:hover {
-  transform: scale(1.02);
-}
-
-/* QR Code Styling */
-.qr-code-container {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
-  border-radius: 15px;
-  padding: 10px;
-  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
-  border: 2px solid rgba(0, 212, 255, 0.5);
-  width: 180px;
-  height: 180px;
-}
-
-.qr-code-image {
-  width: 150px;
-  height: 150px;
-  border-radius: 10px;
-}
-
-.qr-overlay {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 212, 255, 0.9);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.qr-label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* QR Loading State */
-.qr-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: #00d4ff;
-  font-weight: 500;
-}
-
-.qr-loading i {
-  font-size: 2rem;
-  color: #00d4ff;
-}
-
-/* QR Info Section */
-.qr-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 15px;
-  background: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 10px;
-  color: #00d4ff;
-  font-weight: 500;
-}
-
-.qr-info i {
-  font-size: 1.2rem;
-  color: #00d4ff;
-}
-
-.badge-details {
-  flex: 1.5;
-  min-width: 290px;
-  background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.3));
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.badge-details p {
-  margin: 12px 0;
-  font-size: 15px;
-  color: #333;
-  display: flex;
-  align-items: center;
-  line-height: 1.6;
-}
-
-.badge-details strong {
-  min-width: 100px;
-  display: inline-block;
-  font-weight: 600;
-  color: #16213e;
-}
-
-.badge-details a {
-  color: #4361ee;
-  text-decoration: none;
-  transition: color 0.2s;
-  font-weight: 500;
-}
-
-.badge-details a:hover {
-  color: #3b28cc;
-  text-decoration: underline;
-}
-
-/* Mint Button Styling */
-.mint-button {
-  background: linear-gradient(45deg, #6a11cb, #2575fc);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(106, 17, 203, 0.4);
-}
-
-.mint-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 20px rgba(106, 17, 203, 0.5);
-}
-
-.mint-button:disabled {
-  background: #a9a9a9;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.cancel-button {
-  background: linear-gradient(45deg, #ff5e62, #ff9966);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-left: 10px;
-  box-shadow: 0 4px 15px rgba(255, 94, 98, 0.3);
-}
-
-.cancel-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 20px rgba(255, 94, 98, 0.4);
-}
-
-/* Form styling */
-.mint-form-container {
-  background: rgba(28, 28, 36, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 25px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  max-width: 800px;
-  margin: 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.mint-form h3 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #fff;
-  font-weight: 700;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  transition: all 0.3s ease;
-}
-
-.form-group input:focus {
-  border-color: #4361ee;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.form-help {
-  display: block;
-  margin-top: 5px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.form-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: 25px;
-}
-
-.error-message {
-  background-color: rgba(214, 48, 49, 0.2);
-  color: #ff6b6b;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 15px;
-  border-left: 4px solid #ff0000;
+  .form-buttons {
+    flex-direction: column;
+  }
 }

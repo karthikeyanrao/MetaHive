@@ -1,0 +1,236 @@
+/* ============================================
+   BUILDER REGISTRATION.CSS
+   MetaHive Design System (Dark Minimal)
+   ============================================ */
+
+/* ---- Page Container ---- */
+.builder-registration {
+  min-height: 100vh;
+  padding: 100px 20px 80px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0a0a0a;
+}
+
+/* Ambient glow */
+.builder-registration::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 25% 25%, rgba(255, 215, 0, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 75%, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.three-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+/* ---- Form Card ---- */
+.registration-container {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px;
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  position: relative;
+  z-index: 1;
+  animation: fadeSlideUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Heading ---- */
+.registration-container h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 700;
+  margin-bottom: 36px;
+  text-align: center;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+/* ---- Form Groups ---- */
+.form-group {
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 0.2s;
+}
+
+.form-group:focus-within label {
+  color: #ffffff;
+}
+
+/* ---- Inputs ---- */
+input,
+textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 14px;
+  font-family: 'Manrope', sans-serif;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+textarea {
+  min-height: 110px;
+  resize: none;
+  line-height: 1.6;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* ---- File Input ---- */
+input[type="file"] {
+  padding: 10px 14px;
+  cursor: pointer;
+  background: transparent;
+  color: #a3a3a3;
+  font-size: 13px;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  background: #1f1f1f;
+  border: 1px solid #2a2a2a;
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: #a3a3a3;
+  margin-right: 12px;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+input[type="file"]:hover::-webkit-file-upload-button {
+  background: #FFD700;
+  border-color: #FFD700;
+  color: #0a0a0a;
+}
+
+/* ---- Submit Button ---- */
+.submit-button {
+  width: 100%;
+  padding: 14px;
+  background: #FFD700;
+  border: none;
+  border-radius: 12px;
+  color: #0a0a0a;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.submit-button:hover {
+  background: #FACC15;
+  transform: translateY(-2px);
+}
+
+.submit-button:active {
+  transform: scale(0.98);
+}
+
+/* ---- Messages ---- */
+.error-message,
+.success-message {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+.success-message {
+  background: rgba(34, 197, 94, 0.08);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.22);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .registration-container {
+    padding: 32px 20px;
+    border-radius: 16px;
+  }
+
+  .registration-container h1 {
+    font-size: 24px;
+  }
+}
